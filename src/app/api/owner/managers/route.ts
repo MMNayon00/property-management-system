@@ -226,3 +226,4 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+export const dynamic = 'force-dynamic';

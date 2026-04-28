@@ -221,6 +221,24 @@ const translations = {
     totalTenants: "মোট ভাড়াটিয়া",
     monthlyIncome: "মাসিক আয়",
     adminDashboard: "এডমিন ড্যাশবোর্ড",
+    
+    // New Admin Features
+    users: "ব্যবহারকারী ব্যবস্থাপনা",
+    systemVisibility: "সিস্টেম ভিউ",
+    systemControls: "সিস্টেম কন্ট্রোল",
+    monitoring: "মনিটরিং",
+    role: "ভূমিকা",
+    manager: "ম্যানেজার",
+    owner: "মালিক",
+    suspendUser: "অ্যাকাউন্ট স্থগিত করুন",
+    reactivateUser: "অ্যাকাউন্ট সক্রিয় করুন",
+    enableFeatures: "ফিচার এনাবল/ডিজেবল",
+    subscriptionPlans: "সাবস্ক্রিপশন প্ল্যান",
+    announcements: "সিস্টেম-ব্যাপী ঘোষণা",
+    unpaidTrends: "বকেয়া ভাড়ার প্রবণতা",
+    systemLogs: "সিস্টেম লগ",
+    suspendReason: "স্থগিত করার কারণ",
+    statusSuspended: "স্থগিত",
   },
 
   // ==================== Navigation ====================

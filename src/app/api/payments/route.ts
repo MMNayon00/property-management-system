@@ -22,16 +22,34 @@ export async function GET(req: NextRequest) {
     const rentRecordId = req.nextUrl.searchParams.get("rentRecordId");
     const flatId = req.nextUrl.searchParams.get("flatId");
 
-    const where: {
-      rentRecordId?: string;
-      flatId?: string;
-    } = {};
-    if (rentRecordId) where.rentRecordId = rentRecordId;
-    if (flatId) where.flatId = flatId;
+    const where: any = {};
+    if (rentRecordId) {
+      where.rentRecordId = rentRecordId;
+    } else if (flatId) {
+      where.flatId = flatId;
+    } else {
+      where.rentRecord = {
+        flat: {
+          building: {
+            ownerId: session.user.id
+          }
+        }
+      };
+    }
 
     const payments = await prisma.payment.findMany({
       where,
-      include: { rentRecord: true },
+      include: { 
+        rentRecord: {
+          include: {
+            flat: {
+              include: {
+                building: true
+              }
+            }
+          }
+        } 
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -101,3 +119,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+export const dynamic = 'force-dynamic';

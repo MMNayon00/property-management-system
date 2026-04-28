@@ -13,18 +13,29 @@ export async function GET(req: NextRequest) {
     const year = req.nextUrl.searchParams.get("year");
     const month = req.nextUrl.searchParams.get("month");
 
-    const where: {
-      flatId?: string;
-      year?: number;
-      month?: number;
-    } = {};
-    if (flatId) where.flatId = flatId;
+    const where: any = {};
+    if (flatId) {
+      where.flatId = flatId;
+    } else {
+      where.flat = {
+        building: {
+          ownerId: session.user.id
+        }
+      };
+    }
     if (year) where.year = parseInt(year);
     if (month) where.month = parseInt(month);
 
     const rentRecords = await prisma.rentRecord.findMany({
       where,
-      include: { payments: true },
+      include: { 
+        payments: true,
+        flat: {
+          include: {
+            building: true
+          }
+        }
+      },
       orderBy: { month: "desc" },
     });
 
@@ -77,3 +88,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+export const dynamic = 'force-dynamic';

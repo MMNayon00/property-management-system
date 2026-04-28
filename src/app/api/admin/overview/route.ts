@@ -54,3 +54,4 @@ export async function GET(_req: NextRequest) {
     );
   }
 }
+export const dynamic = 'force-dynamic';

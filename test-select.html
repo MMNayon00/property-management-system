@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+    const availableBuildings = [{id: 'b1', name: 'Building 1'}];
+    const availableFlats = [{id: 'f1', buildingId: 'b1', building: {name: 'Building 1'}, flatNumber: '101'}];
+
+    function App() {
+      const [formData, setFormData] = useState({ buildingId: "", flatId: "" });
+
+      return (
+        <div>
+          <select
+            value={formData.buildingId}
+            onChange={(e) => {
+              const newBuildingId = e.target.value;
+              const flatsForBuilding = availableFlats.filter(f => f.buildingId === newBuildingId);
+              setFormData({ 
+                ...formData, 
+                buildingId: newBuildingId, 
+                flatId: flatsForBuilding.length === 1 ? flatsForBuilding[0].id : "" 
+              });
+            }}
+          >
+            <option value="" disabled>Select Building</option>
+            {availableBuildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <br/>
+          {formData.buildingId && (
+            <select
+              value={formData.flatId}
+              onChange={(e) => setFormData({ ...formData, flatId: e.target.value })}
+            >
+              <option value="" disabled>Select Flat</option>
+              {availableFlats.filter(f => f.buildingId === formData.buildingId).length === 0 ? (
+                <option value="" disabled>No flats</option>
+              ) : (
+                availableFlats.filter(f => f.buildingId === formData.buildingId).map(f => (
+                  <option key={f.id} value={f.id}>{f.building.name} - {f.flatNumber}</option>
+                ))
+              )}
+            </select>
+          )}
+          <br/>
+          Selected Building: {formData.buildingId} | Selected Flat: {formData.flatId}
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

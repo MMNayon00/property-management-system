@@ -20,12 +20,27 @@ export async function GET(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = req.nextUrl.searchParams.get("flatId");
-    if (!flatId) return NextResponse.json({ error: "Flat ID required" }, { status: 400 });
 
-    const tenants = await prisma.tenant.findMany({
-      where: { currentFlatId: flatId },
-      include: { history: true },
-    });
+    let tenants;
+
+    if (flatId) {
+      tenants = await prisma.tenant.findMany({
+        where: { currentFlatId: flatId },
+        include: { history: true, currentFlat: { include: { building: true } } },
+      });
+    } else {
+      // Fetch all tenants for the owner's buildings
+      tenants = await prisma.tenant.findMany({
+        where: {
+          currentFlat: {
+            building: {
+              ownerId: session.user.id,
+            },
+          },
+        },
+        include: { history: true, currentFlat: { include: { building: true } } },
+      });
+    }
 
     return NextResponse.json(tenants);
   } catch (error) {
@@ -84,3 +99,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+export const dynamic = 'force-dynamic';
