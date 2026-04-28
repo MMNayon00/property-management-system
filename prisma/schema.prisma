@@ -1,0 +1,266 @@
+// Property Management System - Prisma Schema
+// Bangladesh Bangla-first SaaS platform for rental property management
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================== ENUMS ========================
+
+enum UserRole {
+  ADMIN        // Super Admin
+  OWNER        // Bariwala (Property Owner)
+  MANAGER      // Sub-user under Owner
+}
+
+enum UserStatus {
+  PENDING      // Awaiting admin approval
+  APPROVED     // Approved by admin
+  REJECTED     // Rejected by admin
+}
+
+enum FlatStatus {
+  VACANT       // ফ্ল্যাট খালি
+  OCCUPIED     // ফ্ল্যাট দখলীকৃত
+}
+
+enum PaymentStatus {
+  PAID         // পরিশোধিত
+  UNPAID       // বাকি
+  PARTIAL      // আংশিক পরিশোধিত
+}
+
+// ======================== MODELS ========================
+
+model User {
+  id                   String              @id @default(cuid())
+  email                String?             @unique
+  phone                String?             @unique
+  password             String?             // Hashed password
+  firstName            String
+  lastName             String?
+  profileImage         String?             // URL to profile image
+  
+  // Account Status
+  role                 UserRole            @default(OWNER)
+  status               UserStatus          @default(PENDING)
+  approvedAt           DateTime?
+  approvedBy           String?             // Admin user ID who approved
+  rejectionReason      String?
+  
+  // Auth tokens (for JWT)
+  refreshToken         String?
+  
+  // Relations
+  buildings            Building[]          // If Owner
+  managedBuildings     Building[]          @relation("ManagedBy") // If Manager
+  payments             Payment[]           @relation("CreatedBy")
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  lastLoginAt          DateTime?
+  
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@index([createdAt])
+}
+
+model Building {
+  id                   String              @id @default(cuid())
+  name                 String              // নাম
+  address              String              // ঠিকানা
+  area                 String?             // এলাকা
+  totalFlats           Int                 @default(0)
+  
+  // Ownership
+  ownerId              String
+  owner                User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Management
+  managerId            String?
+  manager              User?               @relation("ManagedBy", fields: [managerId], references: [id], onDelete: SetNull)
+  
+  // Relations
+  flats                Flat[]
+  rentRecords          RentRecord[]
+  payments             Payment[]
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@index([ownerId])
+  @@index([managerId])
+  @@index([createdAt])
+}
+
+model Flat {
+  id                   String              @id @default(cuid())
+  flatNumber           String              // ফ্ল্যাট নম্বর
+  floor                Int?                // ফ্লোর
+  baseRent             Int                 // ভাড়া (টাকা)
+  status               FlatStatus          @default(VACANT)
+  
+  // Building Reference
+  buildingId           String
+  building             Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  
+  // Current Tenant
+  currentTenantId      String?
+  currentTenant        Tenant?             @relation("CurrentTenant", fields: [currentTenantId], references: [id], onDelete: SetNull)
+  
+  // Relations
+  tenantHistory        TenantHistory[]     // Full history of all tenants
+  rentRecords          RentRecord[]
+  payments             Payment[]
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@unique([buildingId, flatNumber])
+  @@index([buildingId])
+  @@index([currentTenantId])
+  @@index([status])
+}
+
+model Tenant {
+  id                   String              @id @default(cuid())
+  name                 String              // ভাড়াটিয়ার নাম
+  phone                String?             // ফোন
+  whatsapp             String?             // হোয়াটসঅ্যাপ
+  nidNumber            String?             // এনআইডি নম্বর
+  nidImage             String?             // এনআইডি ছবি URL
+  profileImage         String?             // প্রোফাইল ছবি URL
+  
+  // Occupation dates
+  moveInDate           DateTime?
+  moveOutDate          DateTime?
+  
+  // Current Flat (if active)
+  currentFlatId        String?
+  currentFlat          Flat?               @relation("CurrentTenant")
+  
+  // Relations
+  history              TenantHistory[]     // Immutable history records
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@index([nidNumber])
+  @@index([currentFlatId])
+}
+
+model TenantHistory {
+  id                   String              @id @default(cuid())
+  tenantId             String
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  flatId               String
+  flat                 Flat                @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  
+  // Immutable record of tenant occupation
+  moveInDate           DateTime
+  moveOutDate          DateTime?           // NULL if currently occupying
+  rentAmount           Int                 // Rent at time of occupancy
+  
+  // Metadata (this record never changes)
+  createdAt            DateTime            @default(now())
+  
+  @@index([tenantId])
+  @@index([flatId])
+  @@index([moveInDate])
+}
+
+model RentRecord {
+  id                   String              @id @default(cuid())
+  
+  // References
+  flatId               String
+  flat                 Flat                @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  
+  buildingId           String
+  building             Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  
+  // Month
+  year                 Int
+  month                Int                 // 1-12
+  
+  // Charges breakdown
+  baseRent             Int                 // ভাড়া
+  extraCharges         Int                 @default(0)          // অতিরিক্ত চার্জ
+  serviceCharges       Int                 @default(0)          // সেবা চার্জ
+  total                Int                 // মোট
+  
+  // Payment Status
+  paymentStatus        PaymentStatus       @default(UNPAID)
+  
+  // Relations
+  payments             Payment[]
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@unique([flatId, year, month])
+  @@index([flatId])
+  @@index([buildingId])
+  @@index([year, month])
+  @@index([paymentStatus])
+}
+
+model Payment {
+  id                   String              @id @default(cuid())
+  
+  // References
+  rentRecordId         String
+  rentRecord           RentRecord          @relation(fields: [rentRecordId], references: [id], onDelete: Cascade)
+  
+  flatId               String
+  flat                 Flat                @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  
+  buildingId           String
+  building             Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  
+  // Payment details
+  amount               Int                 // টাকার পরিমাণ
+  method               String?             // Payment method (cash, bank, etc.)
+  reference            String?             // Transaction reference
+  
+  // Record owner
+  createdById          String
+  createdBy            User                @relation("CreatedBy", fields: [createdById], references: [id])
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@index([rentRecordId])
+  @@index([flatId])
+  @@index([buildingId])
+  @@index([createdById])
+}
+
+model Charge {
+  id                   String              @id @default(cuid())
+  name                 String              // চার্জের নাম
+  description         String?
+  buildingId           String?             // Building-specific charges (NULL for global)
+  amount               Int                 // মাসিক পরিমাণ
+  isActive             Boolean             @default(true)
+  
+  // Metadata
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@index([buildingId])
+  @@index([isActive])
+}

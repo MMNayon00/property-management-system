@@ -1,65 +1,159 @@
-import Image from "next/image";
+// Home page - Landing
+import Link from "next/link";
+import translations from "@/lib/i18n/bn";
 
 export default function Home() {
+  const t = translations;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="text-2xl font-bold text-blue-600">
+              {t.common.appName}
+            </div>
+            <div className="space-x-4">
+              <Link
+                href="/login"
+                className="text-gray-700 hover:text-gray-900 font-medium"
+              >
+                {t.auth.login}
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+              >
+                {t.auth.signup}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            স্মার্ট সম্পত্তি ব্যবস্থাপনা সমাধান
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-gray-600 mb-8">
+            আপনার বাড়ি, ফ্ল্যাট এবং ভাড়াটিয়াদের সহজে পরিচালনা করুন। সম্পূর্ণ অনলাইন প্ল্যাটফর্মে।
           </p>
+          <div className="flex justify-center gap-4">
+            <Link
+              href="/signup"
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 text-lg"
+            >
+              এখনই শুরু করুন
+            </Link>
+            <Link
+              href="/login"
+              className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 text-lg"
+            >
+              লগইন
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-gray-50 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
+            আমাদের বৈশিষ্ট্য
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">🏢</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                বাড়ি ব্যবস্থাপনা
+              </h3>
+              <p className="text-gray-600">
+                একাধিক বাড়ি এবং ফ্ল্যাট পরিচালনা করুন সহজে। প্রতিটি সম্পত্তির বিস্তারিত তথ্য সংরক্ষণ করুন।
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">👥</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                ভাড়াটিয়া ব্যবস্থাপনা
+              </h3>
+              <p className="text-gray-600">
+                ভাড়াটিয়াদের তথ্য এবং ইতিহাস সংরক্ষণ করুন। কোন ডেটা হারিয়ে যাবে না।
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">💰</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                ভাড়া ও পেমেন্ট ট্র্যাকিং
+              </h3>
+              <p className="text-gray-600">
+                মাসিক ভাড়া, পেমেন্ট এবং বকেয়া সহজেই ট্র্যাক করুন। রিপোর্ট তৈরি করুন।
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">📊</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                রিপোর্ট এবং বিশ্লেষণ
+              </h3>
+              <p className="text-gray-600">
+                মাসিক রিপোর্ট এবং ভাড়াটিয়া ইতিহাস রিপোর্ট তৈরি করুন। PDF ডাউনলোড করুন।
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">🔒</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                নিরাপত্তা এবং গোপনীয়তা
+              </h3>
+              <p className="text-gray-600">
+                আপনার ডেটা সম্পূর্ণ সুরক্ষিত। এন্ড-টু-এন্ড এনক্রিপশন সহ।
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="text-3xl mb-4">📱</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                সব ডিভাইসে কাজ করে
+              </h3>
+              <p className="text-gray-600">
+                ডেস্কটপ, ট্যাবলেট বা মোবাইল - যেকোনো জায়গা থেকে অ্যাক্সেস করুন।
+              </p>
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          আজই শুরু করুন - সম্পূর্ণ বিনামূল্যে!
+        </h2>
+        <Link
+          href="/signup"
+          className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 text-lg"
+        >
+          আপনার অ্যাকাউন্ট তৈরি করুন
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p>&copy; 2024 {t.common.appName}. সকল অধিকার সংরক্ষিত।</p>
+        </div>
+      </footer>
     </div>
   );
 }
