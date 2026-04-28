@@ -28,6 +28,7 @@ const translations = {
     yes: "হ্যাঁ",
     no: "না",
     refresh: "রিফ্রেশ করুন",
+    select: "নির্বাচন করুন",
     logout: "লগআউট",
   },
 
@@ -201,6 +202,13 @@ const translations = {
   admin: {
     admin: "এডমিন",
     adminPanel: "এডমিন প্যানেল",
+    totalUsers: "মোট ব্যবহারকারী",
+    owners: "বাড়ির মালিক",
+    noOwners: "কোন বাড়ির মালিক পাওয়া যায়নি",
+    status: "স্ট্যাটাস",
+    statusPending: "অপেক্ষমাণ",
+    statusApproved: "অনুমোদিত",
+    statusRejected: "প্রত্যাখ্যাত",
     pendingUsers: "অপেক্ষমাণ ব্যবহারকারী",
     approveUser: "ব্যবহারকারী অনুমোদন করুন",
     rejectUser: "ব্যবহারকারী প্রত্যাখ্যান করুন",
@@ -227,7 +235,21 @@ const translations = {
     admin: "এডমিন",
     settings: "সেটিংস",
     profile: "প্রোফাইল",
+    managers: "ম্যানেজার",
     help: "সহায়তা",
+  },
+
+  managers: {
+    title: "ম্যানেজার ব্যবস্থাপনা",
+    addManager: "নতুন ম্যানেজার যোগ করুন",
+    editManager: "ম্যানেজার সম্পাদনা করুন",
+    assignBuilding: "বাড়ি নির্বাচন করুন",
+    managerList: "ম্যানেজার তালিকা",
+    noManagers: "কোন ম্যানেজার পাওয়া যায়নি",
+  },
+
+  profile: {
+    profile: "প্রোফাইল",
   },
 
   // ==================== Messages ====================

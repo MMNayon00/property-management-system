@@ -76,7 +76,13 @@ export const authConfig: NextAuthConfig = {
         const userWithRole = user as { role?: string; status?: string };
         token.role = userWithRole.role;
         token.status = userWithRole.status;
+        token.id = (user as { id?: string }).id;
       }
+
+      if (!token.id && token.sub) {
+        token.id = token.sub;
+      }
+
       return token;
     },
 
@@ -85,6 +91,7 @@ export const authConfig: NextAuthConfig = {
         const userWithRole = session.user as { role?: string; status?: string };
         userWithRole.role = token.role as string;
         userWithRole.status = token.status as string;
+        (session.user as { id?: string }).id = token.id as string | undefined;
       }
       return session;
     },

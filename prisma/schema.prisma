@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ======================== ENUMS ========================
@@ -22,6 +21,7 @@ enum UserStatus {
   PENDING      // Awaiting admin approval
   APPROVED     // Approved by admin
   REJECTED     // Rejected by admin
+  SUSPENDED    // Suspended by admin
 }
 
 enum FlatStatus {
@@ -113,7 +113,7 @@ model Flat {
   building             Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
   
   // Current Tenant
-  currentTenantId      String?
+  currentTenantId      String?             @unique
   currentTenant        Tenant?             @relation("CurrentTenant", fields: [currentTenantId], references: [id], onDelete: SetNull)
   
   // Relations
