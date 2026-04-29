@@ -1,6 +1,6 @@
 // Tenant API: CRUD operations
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
         include: { history: true, currentFlat: { include: { building: true } } },
       });
     } else {
-      // Fetch all tenants for the owner's buildings
       tenants = await prisma.tenant.findMany({
         where: {
           currentFlat: {
@@ -62,6 +61,15 @@ export async function POST(req: NextRequest) {
 
     const { name, phone, whatsapp, nidNumber, moveInDate, flatId } = validation.data;
 
+    // Verify flat is available
+    const targetFlat = await prisma.flat.findUnique({ where: { id: flatId } });
+    if (!targetFlat) {
+      return NextResponse.json({ error: "Flat not found" }, { status: 404 });
+    }
+    if (targetFlat.status === "OCCUPIED") {
+      return NextResponse.json({ error: "This flat is already occupied" }, { status: 400 });
+    }
+
     // Create tenant
     const tenant = await prisma.tenant.create({
       data: {
@@ -75,23 +83,20 @@ export async function POST(req: NextRequest) {
     });
 
     // Create tenant history entry
-    const flat = await prisma.flat.findUnique({ where: { id: flatId } });
-    if (flat) {
-      await prisma.tenantHistory.create({
-        data: {
-          tenantId: tenant.id,
-          flatId,
-          moveInDate: new Date(moveInDate),
-          rentAmount: flat.baseRent,
-        },
-      });
+    await prisma.tenantHistory.create({
+      data: {
+        tenantId: tenant.id,
+        flatId,
+        moveInDate: new Date(moveInDate),
+        rentAmount: targetFlat.baseRent,
+      },
+    });
 
-      // Update flat status to occupied
-      await prisma.flat.update({
-        where: { id: flatId },
-        data: { status: "OCCUPIED", currentTenantId: tenant.id },
-      });
-    }
+    // Update flat status to occupied
+    await prisma.flat.update({
+      where: { id: flatId },
+      data: { status: "OCCUPIED", currentTenantId: tenant.id },
+    });
 
     return NextResponse.json(tenant, { status: 201 });
   } catch (error) {
@@ -99,4 +104,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
 export const dynamic = 'force-dynamic';

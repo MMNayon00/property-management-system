@@ -28,8 +28,7 @@ export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Available flats & buildings for assigning
-  const [availableBuildings, setAvailableBuildings] = useState<{id: string, name: string}[]>([]);
-  const [availableFlats, setAvailableFlats] = useState<Flat[]>([]);
+  const [buildingsWithFlats, setBuildingsWithFlats] = useState<any[]>([]);
   
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -70,31 +69,12 @@ export default function TenantsPage() {
 
   const fetchAvailableFlats = async () => {
     try {
-      const res = await fetch("/api/buildings", { cache: "no-store" });
-      if (!res.ok) {
-        console.error("Error response from /api/buildings:", await res.text());
-        return;
+      const res = await fetch("/api/available-flats", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to fetch available flats");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setBuildingsWithFlats(data);
       }
-      const buildings = await res.json();
-      if (!Array.isArray(buildings)) {
-        console.error("Expected array from /api/buildings, got:", buildings);
-        return;
-      }
-      let vacantFlats: Flat[] = [];
-      let buildingsList: {id: string, name: string}[] = [];
-      for (const b of buildings) {
-        buildingsList.push({ id: b.id, name: b.name });
-        if (b.flats) {
-          const v = b.flats.filter((f: any) => f.status === "VACANT").map((f: any) => ({
-            ...f,
-            building: { name: b.name },
-            buildingId: b.id
-          }));
-          vacantFlats = [...vacantFlats, ...v];
-        }
-      }
-      setAvailableBuildings(buildingsList);
-      setAvailableFlats(vacantFlats);
     } catch (error) {
       console.error("Error fetching available flats:", error);
     }
@@ -138,6 +118,18 @@ export default function TenantsPage() {
           }),
         });
       } else {
+        // Manual validation for building and flat
+        if (!formData.buildingId) {
+          alert("দয়া করে একটি বিল্ডিং নির্বাচন করুন");
+          setSubmitting(false);
+          return;
+        }
+        if (!formData.flatId) {
+          alert("দয়া করে একটি ফ্ল্যাট নির্বাচন করুন");
+          setSubmitting(false);
+          return;
+        }
+
         res = await fetch("/api/tenants", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -325,43 +317,69 @@ export default function TenantsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">বিল্ডিং নির্বাচন করুন</label>
                     <select
-                      required
                       value={formData.buildingId}
                       onChange={(e) => {
                         const newBuildingId = e.target.value;
-                        const flatsForBuilding = availableFlats.filter((f: any) => f.buildingId === newBuildingId);
-                        setFormData({ 
-                          ...formData, 
+                        setFormData(prev => ({ 
+                          ...prev, 
                           buildingId: newBuildingId, 
-                          flatId: flatsForBuilding.length === 1 ? flatsForBuilding[0].id : "" 
-                        });
+                          flatId: "" 
+                        }));
                       }}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
-                      <option value="" disabled>বিল্ডিং নির্বাচন করুন</option>
-                      {availableBuildings.map((b) => (
+                      <option value="">বিল্ডিং নির্বাচন করুন</option>
+                      {buildingsWithFlats.map((b) => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
                   </div>
+
                   {formData.buildingId && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">ফ্ল্যাট নির্বাচন করুন</label>
-                      <select
-                        required
-                        value={formData.flatId}
-                        onChange={(e) => setFormData({ ...formData, flatId: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      >
-                        <option value="" disabled>ফ্ল্যাট নির্বাচন করুন</option>
-                        {availableFlats.filter((f: any) => f.buildingId === formData.buildingId).length === 0 ? (
-                          <option value="" disabled>এই বিল্ডিংয়ে কোনো খালি ফ্ল্যাট নেই</option>
-                        ) : (
-                          availableFlats.filter((f: any) => f.buildingId === formData.buildingId).map((f) => (
-                            <option key={f.id} value={f.id}>{f.building.name} - {f.flatNumber}</option>
-                          ))
-                        )}
-                      </select>
+                    <div className="space-y-3">
+                        {(() => {
+                          const selectedB = buildingsWithFlats.find(b => b.id === formData.buildingId);
+                          const vacantFlats = selectedB?.flats || [];
+                          
+                          return (
+                            <>
+                              <label className="block text-sm font-medium text-gray-700">
+                                ফ্ল্যাট নির্বাচন করুন {vacantFlats.length > 0 ? `(${vacantFlats.length} টি খালি আছে)` : ""}
+                              </label>
+                              
+                              {vacantFlats.length === 0 ? (
+                                <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm border border-red-100">
+                                  এই বিল্ডিংয়ে কোনো খালি ফ্ল্যাট নেই
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                                  {vacantFlats.map((f: any) => {
+                                    const isSelected = formData.flatId === f.id;
+                                    return (
+                                      <button
+                                        key={f.id}
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, flatId: f.id }))}
+                                        className={`flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left ${
+                                          isSelected 
+                                            ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100" 
+                                            : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
+                                        }`}
+                                      >
+                                        <span className={`text-base font-bold ${isSelected ? "text-blue-700" : "text-gray-900"}`}>
+                                          {f.flatNumber}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {f.floor} তলা • ৳{f.baseRent.toLocaleString()}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                     </div>
                   )}
                   <div>
