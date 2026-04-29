@@ -7,7 +7,7 @@ import translations from "@/lib/i18n/bn";
 interface Flat {
   id: string;
   flatNumber: string;
-  building: { name: string };
+  building: { id: string; name: string };
 }
 
 interface RentRecord {
@@ -113,7 +113,7 @@ export default function PaymentsPage() {
         body: JSON.stringify({
           rentRecordId: selectedRent.id,
           flatId: selectedRent.flatId,
-          buildingId: selectedRent.flat.building.name, // The backend schema takes buildingId but we only have name here easily, let's fix backend if needed. Wait backend requires buildingId. We will pass flat's building id if available.
+          buildingId: selectedRent.flat.building.id,
           amount: parseInt(formData.amount),
           method: formData.method,
           reference: formData.reference,

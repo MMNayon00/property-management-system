@@ -1,6 +1,6 @@
 // Payment API: Record and manage payments
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
+    console.log("DEBUG: Payments session:", JSON.stringify(session, null, 2));
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
@@ -114,9 +115,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(payment, { status: 201 });
-  } catch (error) {
-    console.error("Error creating payment:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("CRITICAL ERROR in /api/payments:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error?.message || "Unknown error"
+    }, { status: 500 });
   }
 }
 export const dynamic = 'force-dynamic';
