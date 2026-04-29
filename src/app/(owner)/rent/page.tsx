@@ -16,8 +16,7 @@ interface RentRecord {
   id: string;
   flatId: string;
   flat: Flat;
-  year: number;
-  month: number;
+  month: string; // format: "YYYY-MM"
   baseRent: number;
   extraCharges: number;
   serviceCharges: number;
@@ -117,8 +116,7 @@ export default function RentPage() {
         body: JSON.stringify({
           flatId: formData.flatId,
           buildingId: formData.buildingId,
-          year: parseInt(formData.year),
-          month: parseInt(formData.month),
+          month: `${formData.year}-${formData.month.padStart(2, '0')}`,
           baseRent: parseInt(formData.baseRent),
           extraCharges: parseInt(formData.extraCharges || "0"),
           serviceCharges: parseInt(formData.serviceCharges || "0"),
@@ -139,10 +137,16 @@ export default function RentPage() {
     }
   };
 
-  const getMonthName = (monthNum: number) => {
-    const date = new Date();
-    date.setMonth(monthNum - 1);
-    return date.toLocaleString('bn-BD', { month: 'long' });
+  const getMonthName = (monthStr?: string | number) => {
+    if (!monthStr) return "";
+    if (typeof monthStr === "number") {
+      const date = new Date();
+      date.setMonth(monthStr - 1);
+      return date.toLocaleString('bn-BD', { month: 'long' });
+    }
+    const [year, month] = monthStr.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleString('bn-BD', { month: 'long', year: 'numeric' });
   };
 
   if (status === "loading" || loading) {
@@ -180,7 +184,7 @@ export default function RentPage() {
               {rentRecords.map((record) => (
                 <tr key={record.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {getMonthName(record.month)}, {record.year}
+                    {getMonthName(record.month)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {record.flat?.building?.name} - {record.flat?.flatNumber}

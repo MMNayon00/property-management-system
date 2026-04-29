@@ -14,8 +14,7 @@ interface RentRecord {
   id: string;
   flatId: string;
   flat: Flat;
-  year: number;
-  month: number;
+  month: string; // format: "YYYY-MM"
   total: number;
   paymentStatus: string;
   payments: Payment[];
@@ -134,10 +133,11 @@ export default function PaymentsPage() {
     }
   };
 
-  const getMonthName = (monthNum: number) => {
-    const date = new Date();
-    date.setMonth(monthNum - 1);
-    return date.toLocaleString('bn-BD', { month: 'long' });
+  const getMonthName = (monthStr?: string) => {
+    if (!monthStr) return "";
+    const [year, month] = monthStr.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleString('bn-BD', { month: 'long', year: 'numeric' });
   };
 
   if (status === "loading" || loading) {
@@ -168,7 +168,7 @@ export default function PaymentsPage() {
                 <div key={rent.id} className="bg-white p-3 rounded shadow-sm border border-red-100 flex justify-between items-center">
                   <div>
                     <p className="text-sm font-bold text-gray-900">{rent.flat.building.name} - {rent.flat.flatNumber}</p>
-                    <p className="text-xs text-gray-500">{getMonthName(rent.month)}, {rent.year}</p>
+                    <p className="text-xs text-gray-500">{getMonthName(rent.month)}</p>
                     <p className="text-sm font-medium text-red-600 mt-1">বাকি: ৳ {remaining}</p>
                   </div>
                   <button 
@@ -213,7 +213,7 @@ export default function PaymentsPage() {
                     {payment.rentRecord?.flat?.building?.name} - {payment.rentRecord?.flat?.flatNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getMonthName(payment.rentRecord?.month)}, {payment.rentRecord?.year}
+                    {getMonthName(payment.rentRecord?.month)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
                     ৳ {payment.amount}
@@ -262,7 +262,7 @@ export default function PaymentsPage() {
               {selectedRent && (
                 <div className="bg-gray-50 p-3 rounded text-sm text-gray-700">
                   <p><strong>ফ্ল্যাট:</strong> {selectedRent.flat.building.name} - {selectedRent.flat.flatNumber}</p>
-                  <p><strong>মাস:</strong> {getMonthName(selectedRent.month)}, {selectedRent.year}</p>
+                  <p><strong>মাস:</strong> {getMonthName(selectedRent.month)}</p>
                   <p><strong>মোট ভাড়া:</strong> ৳ {selectedRent.total}</p>
                 </div>
               )}

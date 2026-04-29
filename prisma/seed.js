@@ -139,15 +139,17 @@ async function main() {
     });
   }
 
+  const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+
   const rentRecord = await prisma.rentRecord.upsert({
     where: {
-      flatId_year_month: {
+      flatId_month: {
         flatId: flat.id,
-        year,
-        month,
+        month: monthStr,
       },
     },
     update: {
+      tenantId: tenant.id,
       baseRent: 15000,
       extraCharges: 500,
       serviceCharges: 1000,
@@ -156,9 +158,9 @@ async function main() {
     },
     create: {
       flatId: flat.id,
+      tenantId: tenant.id,
       buildingId: building.id,
-      year,
-      month,
+      month: monthStr,
       baseRent: 15000,
       extraCharges: 500,
       serviceCharges: 1000,

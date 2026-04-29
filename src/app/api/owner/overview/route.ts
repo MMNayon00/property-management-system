@@ -27,8 +27,7 @@ export async function GET(_req: NextRequest) {
         : { managerId: userId };
 
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     const buildings = await prisma.building.findMany({
       where: buildingWhere,
@@ -76,8 +75,7 @@ export async function GET(_req: NextRequest) {
           where: {
             buildingId: { in: buildingIds },
             rentRecord: {
-              year,
-              month,
+              month: monthStr,
             },
           },
         }),

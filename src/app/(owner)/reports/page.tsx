@@ -58,7 +58,8 @@ export default function ReportsPage() {
       let url = "";
       if (activeTab === "monthly") {
         if (!selectedBuildingId) return;
-        url = `/api/reports?type=monthly&buildingId=${selectedBuildingId}&year=${selectedYear}&month=${selectedMonth}`;
+        const monthStr = `${selectedYear}-${selectedMonth.padStart(2, '0')}`;
+        url = `/api/reports?type=monthly&buildingId=${selectedBuildingId}&month=${monthStr}`;
       } else {
         if (!selectedTenantId) return;
         url = `/api/reports?type=tenant&tenantId=${selectedTenantId}`;
@@ -74,10 +75,16 @@ export default function ReportsPage() {
     }
   };
 
-  const getMonthName = (monthNum: number) => {
-    const date = new Date();
-    date.setMonth(monthNum - 1);
-    return date.toLocaleString('bn-BD', { month: 'long' });
+  const getMonthName = (monthStr?: string | number) => {
+    if (!monthStr) return "";
+    if (typeof monthStr === "number") {
+      const date = new Date();
+      date.setMonth(monthStr - 1);
+      return date.toLocaleString('bn-BD', { month: 'long' });
+    }
+    const [year, month] = monthStr.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleString('bn-BD', { month: 'long', year: 'numeric' });
   };
 
   if (status === "loading" || initialLoading) {
@@ -261,7 +268,7 @@ export default function ReportsPage() {
                             {new Date(p.createdAt).toLocaleDateString('bn-BD')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {getMonthName(p.rentRecord?.month)}, {p.rentRecord?.year}
+                            {getMonthName(p.rentRecord?.month)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">৳ {p.amount}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.method || "-"}</td>

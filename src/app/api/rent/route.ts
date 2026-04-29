@@ -10,8 +10,7 @@ export async function GET(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = req.nextUrl.searchParams.get("flatId");
-    const year = req.nextUrl.searchParams.get("year");
-    const month = req.nextUrl.searchParams.get("month");
+    const month = req.nextUrl.searchParams.get("month"); // Now a string "YYYY-MM"
 
     const where: any = {};
     if (flatId) {
@@ -23,8 +22,7 @@ export async function GET(req: NextRequest) {
         }
       };
     }
-    if (year) where.year = parseInt(year);
-    if (month) where.month = parseInt(month);
+    if (month) where.month = month;
 
     const rentRecords = await prisma.rentRecord.findMany({
       where,
@@ -52,9 +50,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { flatId, buildingId, year, month, baseRent, extraCharges, serviceCharges } = body;
+    const { flatId, buildingId, month, baseRent, extraCharges, serviceCharges } = body;
 
-    if (!flatId || !buildingId || !year || !month || baseRent === undefined) {
+    if (!flatId || !buildingId || !month || baseRent === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -62,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     // Check if record exists
     const existing = await prisma.rentRecord.findUnique({
-      where: { flatId_year_month: { flatId, year: parseInt(year), month: parseInt(month) } },
+      where: { flatId_month: { flatId, month } },
     });
 
     if (existing) {
@@ -73,8 +71,7 @@ export async function POST(req: NextRequest) {
       data: {
         flatId,
         buildingId,
-        year: parseInt(year),
-        month: parseInt(month),
+        month,
         baseRent,
         extraCharges: extraCharges || 0,
         serviceCharges: serviceCharges || 0,

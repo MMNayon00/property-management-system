@@ -17,8 +17,7 @@ export async function GET(_req: NextRequest) {
     }
 
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     const [totalUsers, totalOwners, totalBuildings, totalTenants, pendingUsers, monthlyIncome] =
       await Promise.all([
@@ -31,8 +30,7 @@ export async function GET(_req: NextRequest) {
           _sum: { amount: true },
           where: {
             rentRecord: {
-              year,
-              month,
+              month: monthStr,
             },
           },
         }),

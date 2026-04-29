@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const unpaidRecords = await prisma.rentRecord.groupBy({
       by: ['month'],
       where: {
-        year: currentYear,
+        month: { startsWith: `${currentYear}-` },
         paymentStatus: 'UNPAID',
       },
       _sum: {
@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
     // Format the response for a chart or table
     const trends = Array.from({ length: 12 }, (_, i) => {
       const monthNum = i + 1;
-      const record = unpaidRecords.find((r) => r.month === monthNum);
+      const monthStr = `${currentYear}-${String(monthNum).padStart(2, '0')}`;
+      const record = unpaidRecords.find((r) => r.month === monthStr);
       return {
         month: monthNum,
         amount: record?._sum.total || 0,

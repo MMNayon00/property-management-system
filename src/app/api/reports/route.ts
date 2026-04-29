@@ -12,16 +12,18 @@ export async function GET(req: NextRequest) {
     const type = req.nextUrl.searchParams.get("type"); // "monthly" or "tenant"
     const buildingId = req.nextUrl.searchParams.get("buildingId");
     const tenantId = req.nextUrl.searchParams.get("tenantId");
-    const year = req.nextUrl.searchParams.get("year") || new Date().getFullYear();
-    const month = req.nextUrl.searchParams.get("month") || new Date().getMonth() + 1;
+    
+    // Month as string "YYYY-MM"
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthStr = req.nextUrl.searchParams.get("month") || currentMonthStr;
 
     if (type === "monthly" && buildingId) {
       // Monthly building report
       const rentRecords = await prisma.rentRecord.findMany({
         where: {
           buildingId,
-          year: parseInt(year as string),
-          month: parseInt(month as string),
+          month: monthStr,
         },
         include: {
           flat: true,
@@ -42,8 +44,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         type: "monthly",
         buildingId,
-        year: parseInt(year as string),
-        month: parseInt(month as string),
+        month: monthStr,
         records: rentRecords,
         totalCollection,
         totalDue,
