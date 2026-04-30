@@ -31,7 +31,7 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER") {
+    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -40,8 +40,13 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
 
+    const buildingWhere: any = { managerId: { not: null } };
+    if (session.user.role === "OWNER") {
+      buildingWhere.ownerId = session.user.id;
+    }
+
     const buildings = await prisma.building.findMany({
-      where: { ownerId, managerId: { not: null } },
+      where: buildingWhere,
       select: { managerId: true },
     });
 
@@ -83,7 +88,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER") {
+    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -108,7 +113,7 @@ export async function POST(req: NextRequest) {
       where: { id: buildingId },
     });
 
-    if (!building || building.ownerId !== ownerId) {
+    if (!building || (session.user.role === "OWNER" && building.ownerId !== ownerId)) {
       return NextResponse.json({ error: "Invalid building" }, { status: 400 });
     }
 
@@ -169,7 +174,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER") {
+    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -190,8 +195,13 @@ export async function PATCH(req: NextRequest) {
 
     const { id, firstName, lastName, email, phone } = validation.data;
 
+    const buildingLinkWhere: any = { managerId: id };
+    if (session.user.role === "OWNER") {
+      buildingLinkWhere.ownerId = ownerId;
+    }
+
     const isManagerLinked = await prisma.building.findFirst({
-      where: { ownerId, managerId: id },
+      where: buildingLinkWhere,
     });
 
     if (!isManagerLinked) {

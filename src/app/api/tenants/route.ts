@@ -29,12 +29,20 @@ export async function GET(req: NextRequest) {
         include: { history: true, currentFlat: { include: { building: true } } },
       });
     } else {
+      const { role, id } = session.user;
+      const buildingFilter: any = {};
+      
+      if (role === "MANAGER") {
+        buildingFilter.managerId = id;
+      } else if (role === "OWNER") {
+        buildingFilter.ownerId = id;
+      }
+      // If role is ADMIN, buildingFilter remains empty {} which returns all
+
       tenants = await prisma.tenant.findMany({
         where: {
           currentFlat: {
-            building: {
-              ownerId: session.user.id,
-            },
+            building: buildingFilter,
           },
         },
         include: { history: true, currentFlat: { include: { building: true } } },

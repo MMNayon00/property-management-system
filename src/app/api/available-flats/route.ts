@@ -8,9 +8,24 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authConfig);
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Fetch all buildings for the owner, and include ONLY vacant flats
+    const { role, id } = session.user;
+    
+    const where: any = {};
+    if (role === "ADMIN") {
+      // Admins see all buildings with vacant flats
+      where.flats = { some: { status: "VACANT" } };
+    } else if (role === "MANAGER") {
+      // Managers see buildings they manage that have vacant flats
+      where.managerId = id;
+      where.flats = { some: { status: "VACANT" } };
+    } else {
+      // Owners see buildings they own that have vacant flats
+      where.ownerId = id;
+      where.flats = { some: { status: "VACANT" } };
+    }
+
     const buildings = await prisma.building.findMany({
-      where: { ownerId: session.user.id },
+      where,
       include: {
         flats: {
           where: { status: "VACANT" },

@@ -24,7 +24,11 @@ export async function GET(req: NextRequest) {
     const building = await prisma.building.findUnique({ where: { id: buildingId } });
     if (!building) return NextResponse.json({ error: "Building not found" }, { status: 404 });
 
-    if (session.user.role === "OWNER" && building.ownerId !== session.user.id) {
+    const { role, id } = session.user;
+    if (role === "OWNER" && building.ownerId !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (role === "MANAGER" && building.managerId !== id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

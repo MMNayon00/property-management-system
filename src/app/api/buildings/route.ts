@@ -39,6 +39,15 @@ export async function GET(_req: NextRequest) {
           flats: true,
         },
       });
+    } else if (session.user.role === "MANAGER") {
+      // Managers see only buildings they manage
+      buildings = await prisma.building.findMany({
+        where: { managerId: session.user.id },
+        include: {
+          owner: { select: { firstName: true, lastName: true } },
+          flats: true,
+        },
+      });
     }
 
     return NextResponse.json(buildings);
