@@ -184,6 +184,7 @@ enum UserStatus {
   PENDING
   APPROVED
   REJECTED
+  SUSPENDED
 }
 
 enum FlatStatus {

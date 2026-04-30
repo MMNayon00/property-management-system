@@ -239,6 +239,7 @@ const translations = {
     systemLogs: "সিস্টেম লগ",
     suspendReason: "স্থগিত করার কারণ",
     statusSuspended: "স্থগিত",
+    filters: "সব",
   },
 
   // ==================== Navigation ====================
@@ -264,6 +265,13 @@ const translations = {
     assignBuilding: "বাড়ি নির্বাচন করুন",
     managerList: "ম্যানেজার তালিকা",
     noManagers: "কোন ম্যানেজার পাওয়া যায়নি",
+    managerDashboard: "ম্যানেজার ড্যাশবোর্ড",
+    assignedBuildings: "নির্ধারিত বাড়ি",
+    moveOutTenant: "ভাড়াটিয়াকে উচ্ছেদ করুন",
+    recordPayment: "পেমেন্ট রেকর্ড করুন",
+    viewPayments: "পেমেন্ট দেখুন",
+    markAsPaid: "পরিশোধিত হিসাবে চিহ্নিত করুন",
+    markAsUnpaid: "বাকি হিসাবে চিহ্নিত করুন",
   },
 
   profile: {

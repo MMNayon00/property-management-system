@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const type = req.nextUrl.searchParams.get("type"); // "monthly" or "tenant"
     const buildingId = req.nextUrl.searchParams.get("buildingId");

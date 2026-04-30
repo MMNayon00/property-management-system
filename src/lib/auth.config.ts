@@ -6,9 +6,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import { verifyPassword } from "./utils";
-import type { NextAuthConfig } from "next-auth";
 
-export const authConfig: NextAuthConfig = {
+export const authConfig = {
   adapter: PrismaAdapter(prisma),
   providers: [
     // Email + Password login
@@ -71,7 +70,7 @@ export const authConfig: NextAuthConfig = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         const userWithRole = user as { role?: string; status?: string };
         token.role = userWithRole.role;
@@ -86,7 +85,7 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user) {
         const userWithRole = session.user as { role?: string; status?: string };
         userWithRole.role = token.role as string;
@@ -96,7 +95,7 @@ export const authConfig: NextAuthConfig = {
       return session;
     },
 
-    async redirect({ url, baseUrl }) {
+    async redirect({ url, baseUrl }: any) {
       // Redirect to dashboard after login
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       else if (new URL(url).origin === baseUrl) return url;

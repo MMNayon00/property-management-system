@@ -34,6 +34,7 @@ export default function LoginPage() {
           setError(t.auth.invalidCredentials);
         }
       } else if (result?.ok) {
+        // Redirect based on role - this will be handled by the layout
         router.push("/dashboard");
       }
     } catch {

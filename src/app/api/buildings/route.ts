@@ -14,15 +14,15 @@ const buildingSchema = z.object({
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let buildings;
 
-    if (session.user.role === "ADMIN") {
+    if ((session as any).user.role === "ADMIN") {
       // Admins see all buildings
       buildings = await prisma.building.findMany({
         include: {
@@ -30,19 +30,19 @@ export async function GET(_req: NextRequest) {
           flats: true,
         },
       });
-    } else if (session.user.role === "OWNER") {
+    } else if ((session as any).user.role === "OWNER") {
       // Owners see only their buildings
       buildings = await prisma.building.findMany({
-        where: { ownerId: session.user.id },
+        where: { ownerId: (session as any).user.id },
         include: {
           owner: { select: { firstName: true, lastName: true } },
           flats: true,
         },
       });
-    } else if (session.user.role === "MANAGER") {
+    } else if ((session as any).user.role === "MANAGER") {
       // Managers see only buildings they manage
       buildings = await prisma.building.findMany({
-        where: { managerId: session.user.id },
+        where: { managerId: (session as any).user.id },
         include: {
           owner: { select: { firstName: true, lastName: true } },
           flats: true,
@@ -62,13 +62,13 @@ export async function GET(_req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role === "ADMIN" && !session.user.id) {
+    if ((session as any).user.role === "ADMIN" && !(session as any).user.id) {
       return NextResponse.json({ error: "Invalid admin" }, { status: 400 });
     }
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
 
     // Only owners can create buildings (unless admin is doing it)
     const ownerId =
-      session.user.role === "OWNER"
-        ? session.user.id
+      (session as any).user.role === "OWNER"
+        ? (session as any).user.id
         : req.nextUrl.searchParams.get("ownerId");
 
     if (!ownerId) {

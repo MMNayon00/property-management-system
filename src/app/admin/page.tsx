@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+    } else if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
       router.push("/dashboard");
     }
   }, [status, session, router]);
@@ -42,7 +42,7 @@ export default function AdminDashboardPage() {
       }
     };
 
-    if (status === "authenticated" && session?.user?.role === "ADMIN") {
+    if (status === "authenticated" && (session?.user as any)?.role === "ADMIN") {
       fetchOverview();
     }
   }, [status, session]);
@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (status === "unauthenticated" || session?.user?.role !== "ADMIN") {
+  if (status === "unauthenticated" || (session?.user as any)?.role !== "ADMIN") {
     return null;
   }
 

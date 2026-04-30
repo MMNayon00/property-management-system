@@ -16,8 +16,8 @@ const paymentSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const rentRecordId = req.nextUrl.searchParams.get("rentRecordId");
     const flatId = req.nextUrl.searchParams.get("flatId");
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       where.rentRecord = {
         flat: {
           building: {
-            ownerId: session.user.id
+            ownerId: (session as any).user.id
           }
         }
       };
@@ -62,14 +62,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
     console.log("DEBUG: Payments session:", JSON.stringify(session, null, 2));
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const validation = paymentSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
     const { rentRecordId, flatId, buildingId, amount, method, reference } = validation.data;
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
         amount,
         method: method || null,
         reference: reference || null,
-        createdById: session.user.id,
+        createdById: (session as any).user.id,
       },
     });
 

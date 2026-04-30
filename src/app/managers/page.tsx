@@ -40,7 +40,7 @@ export default function ManagersPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (status === "authenticated" && session?.user?.role !== "OWNER") {
+    } else if (status === "authenticated" && (session?.user as any)?.role !== "OWNER") {
       router.push("/dashboard");
     }
   }, [status, session, router]);
@@ -65,7 +65,7 @@ export default function ManagersPage() {
       }
     };
 
-    if (status === "authenticated" && session?.user?.role === "OWNER") {
+    if (status === "authenticated" && (session?.user as any)?.role === "OWNER") {
       loadData();
     }
   }, [status, session]);

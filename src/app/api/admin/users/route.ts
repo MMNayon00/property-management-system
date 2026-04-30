@@ -16,13 +16,13 @@ const updateSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
 
     const users = await prisma.user.findMany({
       where: {
-        ...(role ? { role } : {}),
-        ...(status ? { status } : {}),
+        ...(role ? { role: role as any } : {}),
+        ...(status ? { status: status as any } : {}),
         ...(search
           ? {
               OR: [
@@ -70,13 +70,13 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -85,14 +85,14 @@ export async function PATCH(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
 
     const { id, firstName, lastName, email, phone, status } = validation.data;
 
-    if (id === session.user.id) {
+    if (id === (session as any).user.id) {
       return NextResponse.json(
         { error: "Cannot update your own status" },
         { status: 400 }

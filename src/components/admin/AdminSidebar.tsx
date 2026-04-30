@@ -27,6 +27,11 @@ const AdminSidebar = () => {
       exact: true,
     },
     {
+      name: t.common.profile,
+      href: "/profile",
+      icon: User,
+    },
+    {
       name: t.admin.users,
       href: "/admin/users",
       icon: Users,
@@ -59,7 +64,7 @@ const AdminSidebar = () => {
               : pathname?.startsWith(item.href);
 
             return (
-              <li key={item.name}>
+              <li key={item.href}>
                 <Link
                   href={item.href}
                   className={`flex items-center p-2 rounded-lg group ${

@@ -13,7 +13,7 @@ export default function SystemVisibilityPage() {
   const t = translations;
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role === "ADMIN") {
+    if (status === "authenticated" && (session?.user as any)?.role === "ADMIN") {
       fetchData();
     } else if (status !== "loading") {
       setLoading(false);

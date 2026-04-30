@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = req.nextUrl.searchParams.get("flatId");
     const month = req.nextUrl.searchParams.get("month"); // Now a string "YYYY-MM"
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     } else {
       where.flat = {
         building: {
-          ownerId: session.user.id
+          ownerId: (session as any).user.id
         }
       };
     }
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { flatId, buildingId, month, baseRent, extraCharges, serviceCharges } = body;

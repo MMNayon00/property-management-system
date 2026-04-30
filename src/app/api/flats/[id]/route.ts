@@ -16,8 +16,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = (await params).id;
     const flat = await prisma.flat.findUnique({ 
@@ -26,14 +26,14 @@ export async function PATCH(
     });
 
     if (!flat) return NextResponse.json({ error: "Flat not found" }, { status: 404 });
-    if (session.user.role === "OWNER" && flat.building.ownerId !== session.user.id) {
+    if ((session as any).user.role === "OWNER" && flat.building.ownerId !== (session as any).user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
     const validation = updateSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
     const updated = await prisma.flat.update({
@@ -53,8 +53,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = (await params).id;
     const flat = await prisma.flat.findUnique({ 
@@ -63,7 +63,7 @@ export async function DELETE(
     });
 
     if (!flat) return NextResponse.json({ error: "Flat not found" }, { status: 404 });
-    if (session.user.role === "OWNER" && flat.building.ownerId !== session.user.id) {
+    if ((session as any).user.role === "OWNER" && flat.building.ownerId !== (session as any).user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

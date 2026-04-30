@@ -1,6 +1,6 @@
 // Admin API: Approve or reject user
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -14,13 +14,13 @@ const actionSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // Check if user is authenticated and is admin
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       where: { id: userId },
       data: {
         status: action === "approve" ? "APPROVED" : "REJECTED",
-        approvedBy: session.user.id,
+        approvedBy: (session as any).user.id,
         approvedAt: new Date(),
         rejectionReason:
           action === "reject" ? rejectionReason : null,

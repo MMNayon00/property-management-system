@@ -44,7 +44,7 @@ export default function DashboardPage() {
       }
     };
 
-    if (status === "authenticated" && (session?.user?.role === "OWNER" || session?.user?.role === "MANAGER")) {
+    if (status === "authenticated" && ((session?.user as any)?.role === "OWNER" || (session?.user as any)?.role === "MANAGER")) {
       fetchStats();
     } else if (status === "authenticated") {
       setLoading(false);

@@ -6,25 +6,25 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER" && session.user.role !== "MANAGER") {
+    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const userId = session.user.id as string | undefined;
-    if (!userId) {
+    const ownerId = (session as any).user.id as string;
+    if (!ownerId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
 
     const buildingWhere =
-      session.user.role === "OWNER"
-        ? { ownerId: userId }
-        : { managerId: userId };
+      (session as any).user.role === "OWNER"
+        ? { ownerId: ownerId }
+        : { managerId: ownerId };
 
     const now = new Date();
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;

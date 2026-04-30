@@ -16,8 +16,8 @@ const tenantSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const flatId = req.nextUrl.searchParams.get("flatId");
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         include: { history: true, currentFlat: { include: { building: true } } },
       });
     } else {
-      const { role, id } = session.user;
+      const { role, id } = (session as any).user;
       const buildingFilter: any = {};
       
       if (role === "MANAGER") {
@@ -58,13 +58,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authConfig as any);
+    if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const validation = tenantSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
     const { name, phone, whatsapp, nidNumber, moveInDate, flatId } = validation.data;

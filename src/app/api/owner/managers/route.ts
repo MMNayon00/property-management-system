@@ -25,24 +25,24 @@ const updateSchema = z.object({
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const ownerId = session.user.id as string | undefined;
+    const ownerId = (session as any).user.id as string | undefined;
     if (!ownerId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
 
     const buildingWhere: any = { managerId: { not: null } };
-    if (session.user.role === "OWNER") {
-      buildingWhere.ownerId = session.user.id;
+    if ((session as any).user.role === "OWNER") {
+      buildingWhere.ownerId = (session as any).user.id;
     }
 
     const buildings = await prisma.building.findMany({
@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest) {
       select: { managerId: true },
     });
 
-    const managerIds = Array.from(new Set(buildings.map((b) => b.managerId).filter(Boolean)));
+    const managerIds = Array.from(new Set(buildings.map((b) => b.managerId).filter(Boolean))) as string[];
 
     if (managerIds.length === 0) {
       return NextResponse.json([]);
@@ -82,17 +82,17 @@ export async function GET(_req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const ownerId = session.user.id as string | undefined;
+    const ownerId = (session as any).user.id as string | undefined;
     if (!ownerId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       where: { id: buildingId },
     });
 
-    if (!building || (session.user.role === "OWNER" && building.ownerId !== ownerId)) {
+    if (!building || ((session as any).user.role === "OWNER" && building.ownerId !== ownerId)) {
       return NextResponse.json({ error: "Invalid building" }, { status: 400 });
     }
 
@@ -168,17 +168,17 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const ownerId = session.user.id as string | undefined;
+    const ownerId = (session as any).user.id as string | undefined;
     if (!ownerId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
@@ -188,7 +188,7 @@ export async function PATCH(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -196,7 +196,7 @@ export async function PATCH(req: NextRequest) {
     const { id, firstName, lastName, email, phone } = validation.data;
 
     const buildingLinkWhere: any = { managerId: id };
-    if (session.user.role === "OWNER") {
+    if ((session as any).user.role === "OWNER") {
       buildingLinkWhere.ownerId = ownerId;
     }
 

@@ -25,9 +25,7 @@ export default function OwnerLayout({
       return;
     }
 
-    // Role check: Allow OWNER or MANAGER
-    // Admin has their own panel, but we might let them see this too, 
-    // for now restrict to OWNER/MANAGER for pure owner experience
+    // Role check: Allow OWNER, redirect MANAGER to their interface
     const role = (session?.user as any)?.role;
     const userStatus = (session?.user as any)?.status;
 
@@ -36,7 +34,12 @@ export default function OwnerLayout({
       return;
     }
 
-    if ((role === "OWNER" || role === "MANAGER") && userStatus !== "APPROVED") {
+    if (role === "MANAGER") {
+      router.push("/manager/dashboard");
+      return;
+    }
+
+    if (role === "OWNER" && userStatus !== "APPROVED") {
       // Could redirect to a dedicated pending page
       router.push("/login?error=account_pending");
       return;

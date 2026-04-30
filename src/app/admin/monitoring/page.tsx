@@ -14,7 +14,7 @@ export default function MonitoringPage() {
   const t = translations;
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role === "ADMIN") {
+    if (status === "authenticated" && (session?.user as any)?.role === "ADMIN") {
       fetchMonitoringData();
     } else if (status !== "loading") {
       setLoading(false);

@@ -13,13 +13,13 @@ const updateSchema = z.object({
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id as string | undefined;
+    const userId = (session as any).user.id as string | undefined;
     if (!userId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
@@ -49,13 +49,13 @@ export async function GET(_req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authConfig as any);
 
-    if (!session?.user) {
+    if (!(session as any)?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id as string | undefined;
+    const userId = (session as any).user.id as string | undefined;
     if (!userId) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.errors[0].message },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }

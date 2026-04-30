@@ -26,7 +26,7 @@ export default function BuildingsPage() {
   const t = translations;
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user?.role === "OWNER" || session?.user?.role === "ADMIN")) {
+    if (status === "authenticated" && ((session?.user as any)?.role === "OWNER" || (session?.user as any)?.role === "ADMIN")) {
       fetchBuildings();
     } else if (status !== "loading") {
       setLoading(false);

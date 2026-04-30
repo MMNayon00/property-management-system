@@ -199,7 +199,7 @@ export default function PaymentsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ফ্ল্যাট</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ভাড়া মাস</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.payments.amount}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.payments.method}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.payments.paymentMethod}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.payments.reference}</th>
               </tr>
             </thead>
@@ -280,7 +280,7 @@ export default function PaymentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">{t.payments.method}</label>
+                  <label className="block text-sm font-medium text-gray-700">{t.payments.paymentMethod}</label>
                   <select
                     required
                     value={formData.method}
