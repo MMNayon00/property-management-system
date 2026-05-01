@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
 
     const flatId = req.nextUrl.searchParams.get("flatId");
     const month = req.nextUrl.searchParams.get("month"); // Now a string "YYYY-MM"
+    const status = req.nextUrl.searchParams.get("status"); // Payment status filter
 
     const where: any = {};
     if (flatId) {
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest) {
       };
     }
     if (month) where.month = month;
+    if (status) where.paymentStatus = status;
 
     const rentRecords = await prisma.rentRecord.findMany({
       where,

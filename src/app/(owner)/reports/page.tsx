@@ -171,7 +171,11 @@ export default function ReportsPage() {
                   className="block w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="" disabled>নির্বাচন করুন</option>
-                  {tenants.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.phone || "No Phone"})</option>)}
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}({t.phone || "No Phone"})-{t.currentFlat?.building?.name}-{t.currentFlat?.flatNumber}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}

@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { generateMonthlyRentRecords } from "./rent-service";
+import { generateMonthlyRentRecords, updatePaymentStatuses } from "./rent-service";
 
 /**
  * Initializes all cron jobs for the application.
@@ -33,6 +33,13 @@ export function initCronJobs() {
       await generateMonthlyRentRecords();
     } catch (error) {
       console.error("[Cron] Daily rent generation check failed:", error);
+    }
+
+    console.log("[Cron] Running daily payment status updates...");
+    try {
+      await updatePaymentStatuses();
+    } catch (error) {
+      console.error("[Cron] Daily payment status updates failed:", error);
     }
   });
 

@@ -95,3 +95,53 @@ export async function generateMonthlyRentRecords(targetMonth?: string) {
   console.log(`[RentService] Finished. Created: ${stats.created}, Skipped: ${stats.skipped}, Failed: ${stats.failed}`);
   return stats;
 }
+
+/**
+ * Automatically updates payment statuses for rent records based on payments made.
+ * This ensures that rent records reflect the correct payment status.
+ */
+export async function updatePaymentStatuses() {
+  console.log(`[RentService] Starting payment status updates...`);
+
+  // Find all rent records that are not marked as PAID
+  const unpaidRecords = await prisma.rentRecord.findMany({
+    where: {
+      paymentStatus: {
+        in: ['UNPAID', 'PARTIAL']
+      }
+    },
+    include: {
+      payments: true
+    }
+  });
+
+  let updated = 0;
+  let errors = 0;
+
+  for (const record of unpaidRecords) {
+    try {
+      const totalPaid = record.payments.reduce((sum, payment) => sum + payment.amount, 0);
+      
+      let newStatus = 'UNPAID';
+      if (totalPaid >= record.total) {
+        newStatus = 'PAID';
+      } else if (totalPaid > 0) {
+        newStatus = 'PARTIAL';
+      }
+
+      if (newStatus !== record.paymentStatus) {
+        await prisma.rentRecord.update({
+          where: { id: record.id },
+          data: { paymentStatus: newStatus as any }
+        });
+        updated++;
+      }
+    } catch (error) {
+      console.error(`[RentService] Failed to update payment status for record ${record.id}:`, error);
+      errors++;
+    }
+  }
+
+  console.log(`[RentService] Payment status updates completed. Updated: ${updated}, Errors: ${errors}`);
+  return { updated, errors };
+}
