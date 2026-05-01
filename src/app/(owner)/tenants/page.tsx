@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 interface Flat {
   id: string;
@@ -188,6 +189,7 @@ export default function TenantsPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-4">
         <h1 className="text-2xl font-bold text-gray-900">{t.tenants.tenants}</h1>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">

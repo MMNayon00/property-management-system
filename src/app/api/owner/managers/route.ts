@@ -3,237 +3,109 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
-import { hashPassword } from "@/lib/utils";
+import bcrypt from "bcryptjs";
 
-const createSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().optional(),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  password: z.string().min(6),
-  buildingId: z.string().min(1),
-});
+// GET all managers for the logged-in owner
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authConfig as any);
+  if (!session || (session.user as any).role !== "OWNER") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-const updateSchema = z.object({
-  id: z.string(),
-  firstName: z.string().min(1),
-  lastName: z.string().optional(),
-  email: z.string().email(),
-  phone: z.string().optional(),
-});
+  const ownerId = (session.user as any).id;
 
-export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig as any);
-
-    if (!(session as any)?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const ownerId = (session as any).user.id as string | undefined;
-    if (!ownerId) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 400 });
-    }
-
-    const buildingWhere: any = { managerId: { not: null } };
-    if ((session as any).user.role === "OWNER") {
-      buildingWhere.ownerId = (session as any).user.id;
-    }
-
+    // Get all buildings owned by the user
     const buildings = await prisma.building.findMany({
-      where: buildingWhere,
-      select: { managerId: true },
+      where: {
+        ownerId: ownerId,
+      },
+      select: {
+        managerId: true,
+      },
     });
 
-    const managerIds = Array.from(new Set(buildings.map((b) => b.managerId).filter(Boolean))) as string[];
+    // Extract unique manager IDs
+    const managerIds = [...new Set(buildings.map((b) => b.managerId).filter((id) => id !== null))];
 
-    if (managerIds.length === 0) {
-      return NextResponse.json([]);
-    }
-
+    // Get manager details
     const managers = await prisma.user.findMany({
-      where: { id: { in: managerIds }, role: "MANAGER" },
+      where: {
+        id: {
+          in: managerIds,
+        },
+      },
       select: {
         id: true,
         firstName: true,
         lastName: true,
         email: true,
         phone: true,
-        status: true,
-        createdAt: true,
       },
-      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(managers);
   } catch (error) {
     console.error("Error fetching managers:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch managers" }, { status: 500 });
   }
 }
 
+// POST a new manager
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authConfig as any);
+  if (!session || (session.user as any).role !== "OWNER") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ownerId = (session.user as any).id;
+  const body = await req.json();
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    buildingId,
+  } = body;
+
+  if (!firstName || !email || !password || !buildingId) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
   try {
-    const session = await getServerSession(authConfig as any);
-
-    if (!(session as any)?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const ownerId = (session as any).user.id as string | undefined;
-    if (!ownerId) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 400 });
-    }
-
-    const body = await req.json();
-    const validation = createSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
-    }
-
-    const { firstName, lastName, email, phone, password, buildingId } = validation.data;
-
+    // Verify that the building belongs to the logged-in owner
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
     });
 
-    if (!building || ((session as any).user.role === "OWNER" && building.ownerId !== ownerId)) {
-      return NextResponse.json({ error: "Invalid building" }, { status: 400 });
+    if (!building || building.ownerId !== ownerId) {
+      return NextResponse.json({ error: "Building not found or unauthorized" }, { status: 403 });
     }
 
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phone: phone || undefined }] },
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 409 }
-      );
-    }
-
-    const hashedPassword = await hashPassword(password);
-
-    const manager = await prisma.user.create({
+    const newManager = await prisma.user.create({
       data: {
         firstName,
-        lastName: lastName || null,
+        lastName,
         email,
-        phone: phone || null,
+        phone,
         password: hashedPassword,
         role: "MANAGER",
         status: "APPROVED",
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        status: true,
-        createdAt: true,
-      },
     });
 
+    // Assign manager to building
     await prisma.building.update({
       where: { id: buildingId },
-      data: { managerId: manager.id },
+      data: { managerId: newManager.id },
     });
 
-    return NextResponse.json(manager, { status: 201 });
+    return NextResponse.json(newManager, { status: 201 });
   } catch (error) {
     console.error("Error creating manager:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create manager" }, { status: 500 });
   }
 }
-
-export async function PATCH(req: NextRequest) {
-  try {
-    const session = await getServerSession(authConfig as any);
-
-    if (!(session as any)?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if ((session as any).user.role !== "OWNER" && (session as any).user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const ownerId = (session as any).user.id as string | undefined;
-    if (!ownerId) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 400 });
-    }
-
-    const body = await req.json();
-    const validation = updateSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
-    }
-
-    const { id, firstName, lastName, email, phone } = validation.data;
-
-    const buildingLinkWhere: any = { managerId: id };
-    if ((session as any).user.role === "OWNER") {
-      buildingLinkWhere.ownerId = ownerId;
-    }
-
-    const isManagerLinked = await prisma.building.findFirst({
-      where: buildingLinkWhere,
-    });
-
-    if (!isManagerLinked) {
-      return NextResponse.json({ error: "Manager not found" }, { status: 404 });
-    }
-
-    const updated = await prisma.user.update({
-      where: { id },
-      data: {
-        firstName,
-        lastName: lastName || null,
-        email,
-        phone: phone || null,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        status: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("Error updating manager:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-export const dynamic = 'force-dynamic';

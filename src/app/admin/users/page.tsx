@@ -1,421 +1,166 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import translations from "@/lib/i18n/bn";
+import { useState, useEffect } from 'react';
+import { useDebounce } from 'use-debounce';
+import { t } from '@/lib/i18n';
+import BackButton from '@/components/common/BackButton';
 
-interface PendingUser {
+// Mock user data type - replace with your actual User type
+interface User {
   id: string;
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
+  name: string | null;
+  email: string | null;
+  role: "ADMIN" | "OWNER" | "MANAGER" | "TENANT";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
   createdAt: string;
 }
 
-interface OwnerUser {
-  id: string;
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  role?: string;
-  status?: string;
-  createdAt: string;
-}
-
-export default function AdminUsersPage() {
-  const { data: session, status } = useSession();
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
-  const [users, setUsers] = useState<OwnerUser[]>([]);
-  
-  // Filters
-  const [roleFilter, setRoleFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [userForm, setUserForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    status: "APPROVED",
-  });
+export default function UserManagementPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const t = translations;
+  const [error, setError] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState({
+    role: "",
+    status: "",
+    search: "",
+  });
+
+  const [debouncedSearch] = useDebounce(filters.search, 500);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const query = new URLSearchParams({
+        role: filters.role,
+        status: filters.status,
+        search: debouncedSearch,
+      });
+      const response = await fetch(`/api/admin/users?${query.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role === "ADMIN") {
-      fetchData();
-    } else if (status !== "loading") {
-      setLoading(false);
-    }
-  }, [status, session, roleFilter, statusFilter, searchQuery]);
+    fetchUsers();
+  }, [filters.role, filters.status, debouncedSearch]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Build query string
-      const params = new URLSearchParams();
-      if (roleFilter) params.append("role", roleFilter);
-      if (statusFilter) params.append("status", statusFilter);
-      if (searchQuery) params.append("search", searchQuery);
-
-      const [pendingRes, usersRes] = await Promise.all([
-        fetch("/api/admin/pending-users"),
-        fetch(`/api/admin/users?${params.toString()}`),
-      ]);
-
-      const pendingData = await pendingRes.json();
-      const usersData = await usersRes.json();
-
-      setPendingUsers(pendingData || []);
-      setUsers(usersData || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async (userId: string) => {
-    setActionLoading(userId);
-    try {
-      const response = await fetch("/api/admin/approve-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          action: "approve",
-        }),
-      });
-
-      if (response.ok) {
-        setPendingUsers(pendingUsers.filter((u) => u.id !== userId));
-        fetchData(); // Refresh main list
-      }
-    } catch (error) {
-      console.error("Error approving user:", error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleReject = async (userId: string) => {
-    setActionLoading(userId);
-    try {
-      const response = await fetch("/api/admin/approve-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          action: "reject",
-          rejectionReason,
-        }),
-      });
-
-      if (response.ok) {
-        setPendingUsers(pendingUsers.filter((u) => u.id !== userId));
-        setSelectedUser(null);
-        setRejectionReason("");
-        fetchData(); // Refresh main list
-      }
-    } catch (error) {
-      console.error("Error rejecting user:", error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleUserEdit = (user: OwnerUser) => {
-    setEditingUserId(user.id);
-    setUserForm({
-      firstName: user.firstName,
-      lastName: user.lastName || "",
-      email: user.email || "",
-      phone: user.phone || "",
-      status: user.status || "APPROVED",
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handleUserChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setUserForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleUserSave = async (userId: string) => {
+  const handleStatusUpdate = async (userId: string, status: User["status"]) => {
     try {
-      const response = await fetch("/api/admin/users", {
+      const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: userId,
-          firstName: userForm.firstName,
-          lastName: userForm.lastName || undefined,
-          email: userForm.email,
-          phone: userForm.phone || undefined,
-          status: userForm.status,
-        }),
+        body: JSON.stringify({ userId, status }),
       });
-
-      if (response.ok) {
-        const updated = await response.json();
-        setUsers((prev) =>
-          prev.map((u) => (u.id === updated.id ? updated : u))
-        );
-        setEditingUserId(null);
-      }
+      if (!res.ok) throw new Error("Failed to update status");
+      await fetchUsers(); // Refresh users
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error(error);
+      alert("Failed to update user status.");
     }
   };
-
-  const handleSuspendToggle = async (user: OwnerUser) => {
-    const newStatus = user.status === "SUSPENDED" ? "APPROVED" : "SUSPENDED";
-    try {
-      const response = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: user.id,
-          firstName: user.firstName,
-          email: user.email,
-          status: newStatus,
-        }),
-      });
-
-      if (response.ok) {
-        const updated = await response.json();
-        setUsers((prev) =>
-          prev.map((u) => (u.id === updated.id ? updated : u))
-        );
-      }
-    } catch (error) {
-      console.error("Error updating user status:", error);
-    }
-  };
-
-  if (status === "loading" || (loading && users.length === 0)) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-gray-500">{t.common.loading}</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t.admin.users}</h1>
+    <div className="p-4">
+      <BackButton />
+      <h1 className="text-2xl font-bold mb-4">{t('User Management')}</h1>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-white rounded-lg shadow">
+        <input
+          type="text"
+          name="search"
+          placeholder={t('Search by name or email...')}
+          value={filters.search}
+          onChange={handleFilterChange}
+          className="p-2 border rounded"
+        />
+        <select name="role" value={filters.role} onChange={handleFilterChange} className="p-2 border rounded">
+          <option value="">{t('All Roles')}</option>
+          <option value="OWNER">{t('Owner')}</option>
+          <option value="MANAGER">{t('Manager')}</option>
+          <option value="TENANT">{t('Tenant')}</option>
+        </select>
+        <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 border rounded">
+          <option value="">{t('All Statuses')}</option>
+          <option value="PENDING">{t('Pending')}</option>
+          <option value="APPROVED">{t('Approved')}</option>
+          <option value="REJECTED">{t('Rejected')}</option>
+          <option value="SUSPENDED">{t('Suspended')}</option>
+        </select>
       </div>
 
-      {/* Pending Users */}
-      <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
-          {t.admin.pendingUsers}
-        </h2>
-        {pendingUsers.length === 0 ? (
-          <div className="bg-white overflow-hidden shadow rounded-lg p-6">
-            <p className="text-gray-600">{t.admin.noPendingUsers}</p>
-          </div>
+      {/* User Table */}
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        {loading ? (
+          <p className="p-4">{t('Loading...')}</p>
+        ) : error ? (
+          <p className="p-4 text-red-500">{error}</p>
         ) : (
-          <div className="bg-white overflow-hidden shadow rounded-lg overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">নাম</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ইমেইল</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ফোন</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">কর্ম</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {pendingUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {user.firstName} {user.lastName || ""}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.phone}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                      <button
-                        onClick={() => handleApprove(user.id)}
-                        disabled={actionLoading === user.id}
-                        className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md transition disabled:opacity-50"
-                      >
-                        {t.admin.approveUser}
-                      </button>
-                      <button
-                        onClick={() => setSelectedUser(user.id)}
-                        className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md transition"
-                      >
-                        {t.admin.rejectUser}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Users Management */}
-      <div>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-          <h2 className="text-lg font-medium text-gray-900">{t.admin.users}</h2>
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder={t.common.search}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-64 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-            >
-              <option value="">{t.admin.filters} ({t.admin.role})</option>
-              <option value="OWNER">{t.admin.owner}</option>
-              <option value="MANAGER">{t.admin.manager}</option>
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-            >
-              <option value="">{t.admin.filters} ({t.admin.status})</option>
-              <option value="APPROVED">{t.admin.statusApproved}</option>
-              <option value="PENDING">{t.admin.statusPending}</option>
-              <option value="REJECTED">{t.admin.statusRejected}</option>
-              <option value="SUSPENDED">{t.admin.statusSuspended}</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.auth.firstName}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.auth.email}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.auth.phone}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.admin.role}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.admin.status}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">কর্ম</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Role')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Status')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Joined')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {editingUserId === user.id ? (
-                      <div className="space-y-2">
-                        <input name="firstName" value={userForm.firstName} onChange={handleUserChange} className="w-full px-2 py-1 border rounded" />
-                        <input name="lastName" value={userForm.lastName} onChange={handleUserChange} className="w-full px-2 py-1 border rounded" />
-                      </div>
-                    ) : (
-                      `${user.firstName} ${user.lastName || ""}`
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {editingUserId === user.id ? (
-                      <input name="email" value={userForm.email} onChange={handleUserChange} className="w-full px-2 py-1 border rounded" />
-                    ) : user.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {editingUserId === user.id ? (
-                      <input name="phone" value={userForm.phone} onChange={handleUserChange} className="w-full px-2 py-1 border rounded" />
-                    ) : user.phone || "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {user.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {editingUserId === user.id ? (
-                      <select name="status" value={userForm.status} onChange={handleUserChange} className="w-full px-2 py-1 border rounded">
-                        <option value="PENDING">{t.admin.statusPending}</option>
-                        <option value="APPROVED">{t.admin.statusApproved}</option>
-                        <option value="REJECTED">{t.admin.statusRejected}</option>
-                        <option value="SUSPENDED">{t.admin.statusSuspended}</option>
-                      </select>
-                    ) : (
-                      <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                        user.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                        user.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                        user.status === 'SUSPENDED' ? 'bg-orange-100 text-orange-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {user.status}
+                  <td className="px-6 py-4 whitespace-nowrap">{user.name || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{t(user.role)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                     <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                          user.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          user.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {t(user.status)}
                       </span>
-                    )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {editingUserId === user.id ? (
-                      <div className="space-x-2">
-                        <button onClick={() => handleUserSave(user.id)} className="text-green-600 hover:text-green-900">{t.common.save}</button>
-                        <button onClick={() => setEditingUserId(null)} className="text-gray-600 hover:text-gray-900">{t.common.cancel}</button>
-                      </div>
-                    ) : (
-                      <div className="space-x-3 flex items-center">
-                        <button onClick={() => handleUserEdit(user)} className="text-blue-600 hover:text-blue-900">{t.common.edit}</button>
-                        {user.status === "SUSPENDED" ? (
-                          <button onClick={() => handleSuspendToggle(user)} className="text-green-600 hover:text-green-900">{t.admin.reactivateUser}</button>
-                        ) : (
-                          <button onClick={() => handleSuspendToggle(user)} className="text-orange-600 hover:text-orange-900">{t.admin.suspendUser}</button>
-                        )}
-                      </div>
+                  <td className="px-6 py-4 whitespace-nowrap">{new Date(user.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {user.status === 'PENDING' && (
+                      <button onClick={() => handleStatusUpdate(user.id, 'APPROVED')} className="text-green-600 hover:text-green-900 mr-2">{t('Approve')}</button>
+                    )}
+                    {user.status === 'APPROVED' && (
+                       <button onClick={() => handleStatusUpdate(user.id, 'SUSPENDED')} className="text-red-600 hover:text-red-900">{t('Suspend')}</button>
+                    )}
+                     {user.status === 'SUSPENDED' && (
+                       <button onClick={() => handleStatusUpdate(user.id, 'APPROVED')} className="text-green-600 hover:text-green-900">{t('Re-approve')}</button>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        )}
+         {users.length === 0 && !loading && <p className="p-4 text-center text-gray-500">{t('No users found.')}</p>}
       </div>
-
-      {/* Rejection Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">{t.admin.rejectUser}</h3>
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="প্রত্যাখ্যানের কারণ লিখুন (ঐচ্ছিক)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-              rows={4}
-            />
-            <div className="mt-5 flex space-x-3">
-              <button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setRejectionReason("");
-                }}
-                className="flex-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md transition"
-              >
-                {t.common.cancel}
-              </button>
-              <button
-                onClick={() => handleReject(selectedUser)}
-                disabled={actionLoading === selectedUser}
-                className="flex-1 bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-md transition disabled:opacity-50"
-              >
-                {t.admin.rejectUser}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

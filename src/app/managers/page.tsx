@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 type Manager = {
   id: string;
@@ -53,13 +54,22 @@ export default function ManagersPage() {
           fetch("/api/buildings"),
         ]);
 
+        if (!managerRes.ok) {
+          throw new Error("Failed to fetch managers");
+        }
+        if (!buildingRes.ok) {
+          throw new Error("Failed to fetch buildings");
+        }
+
         const managerData = await managerRes.json();
         const buildingData = await buildingRes.json();
 
-        setManagers(managerData || []);
-        setBuildings(buildingData || []);
+        setManagers(Array.isArray(managerData) ? managerData : []);
+        setBuildings(Array.isArray(buildingData) ? buildingData : []);
       } catch (error) {
         console.error("Error loading managers:", error);
+        setManagers([]);
+        setBuildings([]);
       } finally {
         setLoading(false);
       }
@@ -178,6 +188,7 @@ export default function ManagersPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
+      <BackButton />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           {t.managers.title}

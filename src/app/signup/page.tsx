@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import translations from "@/lib/i18n/bn";
 import Link from "next/link";
+import BackButton from '@/components/common/BackButton';
 import { isValidEmail, isValidPhoneNumber } from "@/lib/utils";
 
 export default function SignupPage() {
@@ -112,6 +113,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        <BackButton />
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             {t.auth.signupTitle}

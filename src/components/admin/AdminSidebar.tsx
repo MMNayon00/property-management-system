@@ -88,30 +88,12 @@ const AdminSidebar = () => {
 
       {/* Profile & Logout Section */}
       <div className="p-4 border-t border-gray-200 space-y-2">
-        <Link
-          href="/profile"
-          className={`flex items-center p-2 rounded-lg group ${
-            pathname === "/profile"
-              ? "bg-blue-50 text-blue-700"
-              : "text-gray-900 hover:bg-gray-100"
-          }`}
-        >
-          <User className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
-          <div className="ml-3 overflow-hidden">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {session?.user?.name || t.admin.admin}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {session?.user?.email}
-            </p>
-          </div>
-        </Link>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center w-full p-2 text-red-600 rounded-lg hover:bg-red-50 transition-colors group"
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="w-full flex items-center p-2 rounded-lg group text-gray-900 hover:bg-gray-100"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="ml-3 font-medium">{t.common.logout}</span>
+          <LogOut className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
+          <span className="ml-3">{t.common.logout}</span>
         </button>
       </div>
     </div>

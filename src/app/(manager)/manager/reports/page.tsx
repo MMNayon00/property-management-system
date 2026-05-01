@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 type ReportData = {
   totalBuildings: number;
@@ -79,6 +80,7 @@ export default function ManagerReports() {
 
   return (
     <div className="space-y-6">
+      <BackButton />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">

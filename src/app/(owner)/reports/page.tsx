@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 export default function ReportsPage() {
   const { data: session, status } = useSession();
@@ -93,6 +94,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton />
       <div className="flex justify-between items-center border-b pb-4">
         <h1 className="text-2xl font-bold text-gray-900">{t.nav.reports}</h1>
       </div>

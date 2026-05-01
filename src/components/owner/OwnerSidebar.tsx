@@ -9,7 +9,8 @@ import {
   Users, 
   Receipt,
   CreditCard,
-  FileText
+  FileText,
+  UserPlus
 } from "lucide-react";
 import translations from "@/lib/i18n/bn";
 
@@ -38,6 +39,11 @@ const OwnerSidebar = () => {
       name: t.nav.tenants,
       href: "/tenants",
       icon: Users,
+    },
+    {
+      name: t.nav.managers,
+      href: "/managers",
+      icon: UserPlus,
     },
     {
       name: t.nav.rent,

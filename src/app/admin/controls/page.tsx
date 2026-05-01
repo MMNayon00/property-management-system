@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 export default function SystemControlsPage() {
   const { data: session, status } = useSession();
@@ -17,6 +18,7 @@ export default function SystemControlsPage() {
 
   return (
     <div className="space-y-8">
+      <BackButton />
       <h1 className="text-2xl font-bold text-gray-900">{t.admin.systemControls}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

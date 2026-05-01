@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 export default function MonitoringPage() {
   const { data: session, status } = useSession();
@@ -49,6 +50,7 @@ export default function MonitoringPage() {
 
   return (
     <div className="space-y-8">
+      <BackButton />
       <h1 className="text-2xl font-bold text-gray-900">{t.admin.monitoring}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

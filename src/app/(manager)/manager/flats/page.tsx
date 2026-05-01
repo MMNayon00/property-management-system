@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 type Flat = {
   id: string;
@@ -69,6 +70,7 @@ export default function ManagerFlats() {
 
   return (
     <div className="space-y-6">
+      <BackButton />
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

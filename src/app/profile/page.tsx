@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import translations from "@/lib/i18n/bn";
+import BackButton from '@/components/common/BackButton';
 
 type Profile = {
   firstName: string;
