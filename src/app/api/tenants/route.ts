@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
       const buildingFilter: any = {};
       
       if (role === "MANAGER") {
-        buildingFilter.managerId = id;
+        const managerUser = await prisma.user.findUnique({ where: { id } });
+        buildingFilter.ownerId = managerUser?.ownerId;
       } else if (role === "OWNER") {
         buildingFilter.ownerId = id;
       }

@@ -19,13 +19,12 @@ export async function GET(_req: NextRequest) {
     const now = new Date();
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    const [totalUsers, totalOwners, totalBuildings, totalTenants, pendingUsers, monthlyIncome] =
+    const [totalUsers, totalOwners, totalBuildings, totalTenants, monthlyIncome] =
       await Promise.all([
         prisma.user.count(),
         prisma.user.count({ where: { role: "OWNER" } }),
         prisma.building.count(),
         prisma.tenant.count(),
-        prisma.user.count({ where: { status: "PENDING" } }),
         prisma.payment.aggregate({
           _sum: { amount: true },
           where: {
@@ -41,7 +40,6 @@ export async function GET(_req: NextRequest) {
       totalOwners,
       totalBuildings,
       totalTenants,
-      pendingUsers,
       monthlyIncome: monthlyIncome._sum.amount || 0,
     });
   } catch (error) {

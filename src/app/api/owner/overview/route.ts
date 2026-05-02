@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest) {
     const buildingWhere =
       (session as any).user.role === "OWNER"
         ? { ownerId: ownerId }
-        : { managerId: ownerId };
+        : {};
 
     const now = new Date();
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;

@@ -105,16 +105,11 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
+      <BackButton />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           {t.profile.profile}
         </h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          {t.common.logout}
-        </button>
       </div>
 
       <form onSubmit={handleSave} className="bg-white shadow rounded-lg p-6 space-y-4">
@@ -132,8 +127,9 @@ export default function ProfilePage() {
             name="firstName"
             value={form.firstName}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
             required
+            disabled={(session?.user as any)?.role === 'ADMIN'}
           />
         </div>
 
@@ -145,7 +141,8 @@ export default function ProfilePage() {
             name="lastName"
             value={form.lastName}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
+            disabled={(session?.user as any)?.role === 'ADMIN'}
           />
         </div>
 
@@ -169,17 +166,20 @@ export default function ProfilePage() {
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
+            disabled={(session?.user as any)?.role === 'ADMIN'}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full py-2 px-4 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {saving ? t.common.loading : t.common.save}
-        </button>
+        {(session?.user as any)?.role !== 'ADMIN' && (
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-2 px-4 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {saving ? t.common.loading : t.common.save}
+          </button>
+        )}
       </form>
     </div>
   );

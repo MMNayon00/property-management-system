@@ -36,10 +36,16 @@ export async function GET(_req: NextRequest) {
     }
 
     const managerId = (session as any).user.id as string;
+    const managerUser = await prisma.user.findUnique({ where: { id: managerId } });
+    const ownerId = managerUser?.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: "Manager not associated with any owner" }, { status: 403 });
+    }
 
     // Get buildings managed by this manager
     const buildings = await prisma.building.findMany({
-      where: { managerId },
+      where: { ownerId },
       select: { id: true },
     });
 
@@ -115,6 +121,12 @@ export async function POST(req: NextRequest) {
     const validatedData = createSchema.parse(body);
 
     const managerId = (session as any).user.id as string;
+    const managerUser = await prisma.user.findUnique({ where: { id: managerId } });
+    const ownerId = managerUser?.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: "Manager not associated with any owner" }, { status: 403 });
+    }
 
     // Check if the flat belongs to a building managed by this manager
     const flat = await prisma.flat.findUnique({
@@ -126,7 +138,7 @@ export async function POST(req: NextRequest) {
         building: {
           select: {
             id: true,
-            managerId: true,
+            ownerId: true,
           },
         },
       },
@@ -136,7 +148,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Flat not found" }, { status: 404 });
     }
 
-    if (flat.building.managerId !== managerId) {
+    if (flat.building.ownerId !== ownerId) {
       return NextResponse.json({ error: "Unauthorized to manage this flat" }, { status: 403 });
     }
 

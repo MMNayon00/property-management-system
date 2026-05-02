@@ -35,8 +35,15 @@ export default function LoginPage() {
           setError(t.auth.invalidCredentials);
         }
       } else if (result?.ok) {
-        // Redirect based on role - this will be handled by the layout
-        router.push("/dashboard");
+        const session = await fetch("/api/auth/session").then(res => res.json());
+        const role = session?.user?.role;
+        if (role === "MANAGER") {
+          router.push("/manager/dashboard");
+        } else if (role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch {
       setError(t.messages.somethingWentWrong);

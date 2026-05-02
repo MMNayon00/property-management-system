@@ -9,7 +9,6 @@ const buildingSchema = z.object({
   name: z.string().min(1, "Building name is required"),
   address: z.string().min(1, "Address is required"),
   area: z.string().optional(),
-  managerId: z.string().optional(),
 });
 
 export async function GET(_req: NextRequest) {
@@ -41,8 +40,9 @@ export async function GET(_req: NextRequest) {
       });
     } else if ((session as any).user.role === "MANAGER") {
       // Managers see only buildings they manage
+      const managerUser = await prisma.user.findUnique({ where: { id: (session as any).user.id } });
       buildings = await prisma.building.findMany({
-        where: { managerId: (session as any).user.id },
+        where: { ownerId: managerUser?.ownerId || "" },
         include: {
           owner: { select: { firstName: true, lastName: true } },
           flats: true,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, address, area, managerId } = validation.data;
+    const { name, address, area } = validation.data;
 
     // Only owners can create buildings (unless admin is doing it)
     const ownerId =
@@ -115,7 +115,6 @@ export async function POST(req: NextRequest) {
         address,
         area: area || null,
         ownerId,
-        managerId: managerId || null,
       },
     });
 

@@ -15,7 +15,6 @@ export default function AdminDashboardPage() {
     totalOwners: number;
     totalBuildings: number;
     totalTenants: number;
-    pendingUsers: number;
     monthlyIncome: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +62,18 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">{t.admin.adminDashboard}</h1>
+        <button
+          onClick={() => {
+            const { signOut } = require("next-auth/react");
+            signOut({ callbackUrl: "/login" });
+          }}
+          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium flex items-center"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          {t.common.logout}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -89,16 +100,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Pending Users */}
-        <div className="bg-white overflow-hidden shadow rounded-lg flex">
-          <div className="p-5 flex-1">
-            <dt className="text-sm font-medium text-gray-500 truncate">{t.admin.pendingUsers}</dt>
-            <dd className="mt-1 text-3xl font-extrabold text-gray-900">{stats?.pendingUsers || 0}</dd>
-          </div>
-          <div className="bg-yellow-50 w-16 flex items-center justify-center text-yellow-600">
-            <Users className="w-8 h-8" />
-          </div>
-        </div>
 
         {/* Total Buildings */}
         <div className="bg-white overflow-hidden shadow rounded-lg flex">

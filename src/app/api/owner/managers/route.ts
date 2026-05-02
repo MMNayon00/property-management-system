@@ -8,32 +8,17 @@ import bcrypt from "bcryptjs";
 // GET all managers for the logged-in owner
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authConfig as any);
-  if (!session || (session.user as any).role !== "OWNER") {
+  if (!session || (session as any)?.user?.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const ownerId = (session.user as any).id;
+  const ownerId = (session as any)?.user?.id;
 
   try {
-    // Get all buildings owned by the user
-    const buildings = await prisma.building.findMany({
-      where: {
-        ownerId: ownerId,
-      },
-      select: {
-        managerId: true,
-      },
-    });
-
-    // Extract unique manager IDs
-    const managerIds = [...new Set(buildings.map((b) => b.managerId).filter((id) => id !== null))];
-
-    // Get manager details
     const managers = await prisma.user.findMany({
       where: {
-        id: {
-          in: managerIds,
-        },
+        role: "MANAGER",
+        ownerId: ownerId,
       },
       select: {
         id: true,
@@ -54,11 +39,11 @@ export async function GET(req: NextRequest) {
 // POST a new manager
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authConfig as any);
-  if (!session || (session.user as any).role !== "OWNER") {
+  if (!session || (session as any)?.user?.role !== "OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const ownerId = (session.user as any).id;
+  const ownerId = (session as any)?.user?.id;
   const body = await req.json();
   const {
     firstName,
@@ -66,22 +51,13 @@ export async function POST(req: NextRequest) {
     email,
     phone,
     password,
-    buildingId,
   } = body;
 
-  if (!firstName || !email || !password || !buildingId) {
+  if (!firstName || !email || !password) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   try {
-    // Verify that the building belongs to the logged-in owner
-    const building = await prisma.building.findUnique({
-      where: { id: buildingId },
-    });
-
-    if (!building || building.ownerId !== ownerId) {
-      return NextResponse.json({ error: "Building not found or unauthorized" }, { status: 403 });
-    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -94,13 +70,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         role: "MANAGER",
         status: "APPROVED",
+        ownerId: ownerId,
       },
-    });
-
-    // Assign manager to building
-    await prisma.building.update({
-      where: { id: buildingId },
-      data: { managerId: newManager.id },
     });
 
     return NextResponse.json(newManager, { status: 201 });

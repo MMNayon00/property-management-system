@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user with PENDING status
+    // Create user with APPROVED status
     const user = await prisma.user.create({
       data: {
         firstName,
@@ -71,13 +71,13 @@ export async function POST(req: NextRequest) {
         phone,
         password: hashedPassword,
         role: "OWNER", // Default role for signup
-        status: "PENDING", // New owners must be approved by admin
+        status: "APPROVED", // Auto-approved
       },
     });
 
     return NextResponse.json(
       {
-        message: "Signup successful. Please wait for admin approval.",
+        message: "Signup successful. You can now log in.",
         user: {
           id: user.id,
           email: user.email,

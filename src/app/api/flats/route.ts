@@ -28,8 +28,11 @@ export async function GET(req: NextRequest) {
     if (role === "OWNER" && building.ownerId !== id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    if (role === "MANAGER" && building.managerId !== id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (role === "MANAGER") {
+      const managerUser = await prisma.user.findUnique({ where: { id } });
+      if (building.ownerId !== managerUser?.ownerId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const flats = await prisma.flat.findMany({

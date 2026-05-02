@@ -11,7 +11,7 @@ interface User {
   name: string | null;
   email: string | null;
   role: "ADMIN" | "OWNER" | "MANAGER" | "TENANT";
-  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  status: "APPROVED" | "REJECTED" | "SUSPENDED";
   createdAt: string;
 }
 
@@ -99,7 +99,7 @@ export default function UserManagementPage() {
         </select>
         <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 border rounded">
           <option value="">{t('All Statuses')}</option>
-          <option value="PENDING">{t('Pending')}</option>
+
           <option value="APPROVED">{t('Approved')}</option>
           <option value="REJECTED">{t('Rejected')}</option>
           <option value="SUSPENDED">{t('Suspended')}</option>
@@ -134,7 +134,6 @@ export default function UserManagementPage() {
                      <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           user.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                          user.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                           user.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}
@@ -144,14 +143,11 @@ export default function UserManagementPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {user.status === 'PENDING' && (
-                      <button onClick={() => handleStatusUpdate(user.id, 'APPROVED')} className="text-green-600 hover:text-green-900 mr-2">{t('Approve')}</button>
-                    )}
                     {user.status === 'APPROVED' && (
                        <button onClick={() => handleStatusUpdate(user.id, 'SUSPENDED')} className="text-red-600 hover:text-red-900">{t('Suspend')}</button>
                     )}
                      {user.status === 'SUSPENDED' && (
-                       <button onClick={() => handleStatusUpdate(user.id, 'APPROVED')} className="text-green-600 hover:text-green-900">{t('Re-approve')}</button>
+                       <button onClick={() => handleStatusUpdate(user.id, 'APPROVED')} className="text-green-600 hover:text-green-900">{t('Unsuspend')}</button>
                     )}
                   </td>
                 </tr>

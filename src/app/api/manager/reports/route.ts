@@ -17,10 +17,16 @@ export async function GET(_req: NextRequest) {
     }
 
     const managerId = (session as any).user.id as string;
+    const managerUser = await prisma.user.findUnique({ where: { id: managerId } });
+    const ownerId = managerUser?.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: "Manager not associated with any owner" }, { status: 403 });
+    }
 
     // Get buildings managed by this manager
     const buildings = await prisma.building.findMany({
-      where: { managerId },
+      where: { ownerId },
       select: { id: true },
     });
 
@@ -54,7 +60,7 @@ export async function GET(_req: NextRequest) {
     ] = await Promise.all([
       // Total buildings
       prisma.building.count({
-        where: { managerId },
+        where: { ownerId },
       }),
 
       // Total flats

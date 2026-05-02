@@ -21,10 +21,16 @@ export async function POST(req: NextRequest) {
     const reportType = searchParams.get("type") || "monthly";
 
     const managerId = (session as any).user.id as string;
+    const managerUser = await prisma.user.findUnique({ where: { id: managerId } });
+    const ownerId = managerUser?.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: "Manager not associated with any owner" }, { status: 403 });
+    }
 
     // Get buildings managed by this manager
     const buildings = await prisma.building.findMany({
-      where: { managerId },
+      where: { ownerId },
       select: { id: true, name: true },
     });
 
@@ -190,7 +196,7 @@ export async function POST(req: NextRequest) {
     } else if (reportType === "building") {
       // Generate building report
       const buildingsData = await prisma.building.findMany({
-        where: { managerId },
+        where: { ownerId },
         select: {
           name: true,
           address: true,

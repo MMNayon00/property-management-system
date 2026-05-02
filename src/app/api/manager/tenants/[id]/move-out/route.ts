@@ -22,6 +22,12 @@ export async function POST(
 
     const tenantId = id;
     const managerId = (session as any).user.id as string;
+    const managerUser = await prisma.user.findUnique({ where: { id: managerId } });
+    const ownerId = managerUser?.ownerId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: "Manager not associated with any owner" }, { status: 403 });
+    }
 
     // Check if the tenant belongs to a building managed by this manager
     const tenant = await prisma.tenant.findUnique({
@@ -33,7 +39,7 @@ export async function POST(
             id: true,
             building: {
               select: {
-                managerId: true,
+                ownerId: true,
               },
             },
           },
@@ -45,7 +51,7 @@ export async function POST(
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
 
-    if (tenant.currentFlat?.building.managerId !== managerId) {
+    if (tenant.currentFlat?.building.ownerId !== ownerId) {
       return NextResponse.json({ error: "Unauthorized to manage this tenant" }, { status: 403 });
     }
 

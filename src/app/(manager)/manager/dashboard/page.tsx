@@ -52,13 +52,27 @@ export default function ManagerDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t.dashboard.welcome}, {session?.user?.name}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          আপনার পরিচালিত বাড়িগুলোর সারাংশ
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t.dashboard.welcome}, {session?.user?.name}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            আপনার পরিচালিত বাড়িগুলোর সারাংশ
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            const { signOut } = require("next-auth/react");
+            signOut({ callbackUrl: "/login" });
+          }}
+          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium flex items-center"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          {t.common.logout}
+        </button>
       </div>
 
       {/* Stats Cards */}

@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
       where.flats = { some: { status: "VACANT" } };
     } else if (role === "MANAGER") {
       // Managers see buildings they manage that have vacant flats
-      where.managerId = id;
+      const managerUser = await prisma.user.findUnique({ where: { id } });
+      where.ownerId = managerUser?.ownerId;
       where.flats = { some: { status: "VACANT" } };
     } else {
       // Owners see buildings they own that have vacant flats

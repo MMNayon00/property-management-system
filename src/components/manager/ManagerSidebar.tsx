@@ -73,16 +73,14 @@ const ManagerSidebar = () => {
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className={`flex items-center p-2 rounded-lg group ${
-                    isActive
+                  className={`flex items-center p-2 rounded-lg group ${isActive
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-900 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-colors ${
-                      isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-900"
-                    }`}
+                    className={`w-5 h-5 transition-colors ${isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-900"
+                      }`}
                   />
                   <span className="ml-3">{item.name}</span>
                 </Link>

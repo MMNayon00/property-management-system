@@ -33,7 +33,6 @@ export default function ManagersPage() {
     email: "",
     phone: "",
     password: "",
-    buildingId: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -93,10 +92,7 @@ export default function ManagersPage() {
       const response = await fetch("/api/owner/managers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          buildingId: form.buildingId,
-        }),
+        body: JSON.stringify(form),
       });
 
       if (!response.ok) {
@@ -113,7 +109,6 @@ export default function ManagersPage() {
         email: "",
         phone: "",
         password: "",
-        buildingId: "",
       });
       setMessage(t.messages.operationSuccessful);
     } catch {
@@ -129,7 +124,6 @@ export default function ManagersPage() {
       email: manager.email || "",
       phone: manager.phone || "",
       password: "",
-      buildingId: "",
     });
   };
 
@@ -166,7 +160,6 @@ export default function ManagersPage() {
         email: "",
         phone: "",
         password: "",
-        buildingId: "",
       });
       setMessage(t.messages.operationSuccessful);
     } catch {
@@ -283,25 +276,7 @@ export default function ManagersPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  {t.managers.assignBuilding}
-                </label>
-                <select
-                  name="buildingId"
-                  value={form.buildingId}
-                  onChange={handleFormChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
-                  required
-                >
-                  <option value="">{t.common.select}</option>
-                  {buildings.map((building) => (
-                    <option key={building.id} value={building.id}>
-                      {building.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
             </>
           )}
         </div>
