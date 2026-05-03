@@ -101,18 +101,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Update rent record status if fully paid
-    if (newStatus === "PAID") {
-      await prisma.rentRecord.update({
-        where: { id: rentRecordId },
-        data: { paymentStatus: "PAID" },
-      });
-    } else if (totalPaid > 0) {
-      await prisma.rentRecord.update({
-        where: { id: rentRecordId },
-        data: { paymentStatus: "PARTIAL" },
-      });
-    }
+    // Update rent record status and balances
+    const { updateRentRecordBalances } = await import("@/lib/services/rent-tracker");
+    await updateRentRecordBalances(rentRecordId);
 
     return NextResponse.json(payment, { status: 201 });
   } catch (error: any) {

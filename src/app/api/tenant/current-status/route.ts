@@ -25,47 +25,37 @@ export async function GET(req: NextRequest) {
 
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
-    const currentRecord = await prisma.rentRecord.findFirst({
-      where: {
-        tenantId: tenant.id,
-        month: currentMonth,
-      },
-      include: {
-        payments: true,
-      },
-    });
-
-    const summary = await prisma.rentRecord.aggregate({
+    // Fetch all rent records for this tenant
+    const allRecords = await prisma.rentRecord.findMany({
       where: { tenantId: tenant.id },
-      _sum: {
-        total: true,
-      },
-      _count: {
-        id: true,
-      }
+      include: { payments: true },
+      orderBy: { month: "asc" },
     });
 
-    const totalPaid = await prisma.payment.aggregate({
-      where: {
-        rentRecord: {
-          tenantId: tenant.id
-        }
-      },
-      _sum: {
-        amount: true
-      }
-    });
-
-    const totalDue = (summary._sum.total || 0) - (totalPaid._sum.amount || 0);
+    // Separate current month and unpaid months
+    const currentRecord = allRecords.find(r => r.month === currentMonth);
+    const unpaidMonths = allRecords.filter(r => r.paymentStatus !== "PAID");
+    
+    // Calculate total summary
+    const totalRent = allRecords.reduce((sum, r) => sum + r.totalAmount, 0);
+    const paidAmount = allRecords.reduce((sum, r) => sum + r.paidAmount, 0);
+    const dueAmount = totalRent - paidAmount;
 
     return NextResponse.json({
       currentMonth,
       currentRecord,
+      unpaidMonths: unpaidMonths.map(r => ({
+        id: r.id,
+        month: r.month,
+        amount: r.totalAmount,
+        due: r.dueAmount,
+        status: r.paymentStatus,
+      })),
       summary: {
-        totalRent: summary._sum.total || 0,
-        paidAmount: totalPaid._sum.amount || 0,
-        dueAmount: totalDue,
-        totalMonths: summary._count.id || 0,
+        totalRent,
+        paidAmount,
+        dueAmount: Math.max(0, dueAmount),
+        totalMonths: allRecords.length,
       }
     });
   } catch (error) {

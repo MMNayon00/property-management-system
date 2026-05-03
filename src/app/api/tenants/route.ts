@@ -182,6 +182,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Automatically generate missing rent records for this tenant
+    const { generateMonthlyRentRecords } = await import("@/lib/services/rent-tracker");
+    await generateMonthlyRentRecords();
+
     return NextResponse.json(tenant, { status: 201 });
   } catch (error) {
     console.error("Error creating tenant:", error);

@@ -79,7 +79,7 @@ export default function TenantDashboard() {
             <AlertCircle className="text-red-600" />
           </div>
           <div>
-            <p className="text-sm text-red-500 font-bold">{t.tenantPortal.totalDue}</p>
+            <p className="text-sm text-red-500 font-bold">মোট বাকি (Total Due)</p>
             <p className="text-2xl font-black text-red-600">৳{summary.dueAmount}</p>
           </div>
         </div>
@@ -95,42 +95,48 @@ export default function TenantDashboard() {
         </div>
       </div>
 
-      {/* Unpaid Months List (New Section) */}
-      {rentHistory.filter(r => r.paymentStatus !== "PAID").length > 0 && (
-        <div className="bg-red-50 border border-red-100 rounded-xl p-6">
-          <h2 className="text-red-800 font-bold flex items-center mb-4">
-            <AlertCircle className="w-5 h-5 mr-2" />
-            বাকি বিলসমূহ (Unpaid Months)
-          </h2>
+      {/* Unpaid Months List (Critical Requirement) */}
+      <div className="bg-red-50 border border-red-100 rounded-xl p-6">
+        <h2 className="text-red-800 font-bold flex items-center mb-4">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          🔴 বাকি মাসসমূহ (Unpaid Months)
+        </h2>
+        {statusData?.unpaidMonths && statusData.unpaidMonths.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rentHistory.filter(r => r.paymentStatus !== "PAID").map(record => (
+            {statusData.unpaidMonths.map((record: any) => (
               <div key={record.id} className="bg-white p-4 rounded-lg shadow-sm border border-red-200 flex justify-between items-center transition-transform hover:scale-[1.02]">
                 <div>
                   <p className="text-sm font-bold text-gray-700">{record.month}</p>
-                  <p className="text-xs text-gray-500">মোট: ৳{record.total}</p>
+                  <p className="text-xs text-gray-500">মোট: ৳{record.amount}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-red-600 font-black">৳{record.total - (record.payments?.reduce((a:any,p:any)=>a+p.amount,0)||0)} বাকি</p>
+                  <p className="text-red-600 font-black">৳{record.due} বাকি</p>
+                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase">{record.status}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-green-600 text-sm flex items-center">
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            আপনার কোনো বকেয়া নেই (No outstanding dues)
+          </p>
+        )}
+      </div>
 
       {/* Current Month Rent Status */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
           <h2 className="font-bold text-gray-800 flex items-center">
             <Clock className="w-5 h-5 mr-2 text-blue-500" />
-            {t.tenantPortal.currentStatus} ({statusData?.currentMonth})
+            📅 বর্তমান মাস ({statusData?.currentMonth})
           </h2>
           {currentRecord?.paymentStatus === "PAID" ? (
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium uppercase">
               {t.tenantPortal.statusPaid}
             </span>
           ) : (
-            <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">
+            <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium uppercase">
               {t.tenantPortal.statusUnpaid}
             </span>
           )}
@@ -138,7 +144,7 @@ export default function TenantDashboard() {
         <div className="p-6 grid grid-cols-2 md:grid-cols-5 gap-6">
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider">{t.tenantPortal.totalRent}</p>
-            <p className="text-lg font-bold">৳{currentRecord?.total || 0}</p>
+            <p className="text-lg font-bold">৳{currentRecord?.totalAmount || 0}</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider">{t.rent.baseRent}</p>
@@ -151,13 +157,13 @@ export default function TenantDashboard() {
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider">{t.tenantPortal.paidAmount}</p>
             <p className="text-lg font-bold text-green-600">
-              ৳{currentRecord?.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0}
+              ৳{currentRecord?.paidAmount || 0}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wider">{t.tenantPortal.dueAmount}</p>
             <p className="text-lg font-bold text-red-600">
-              ৳{(currentRecord?.total || 0) - (currentRecord?.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0)}
+              ৳{currentRecord?.dueAmount || 0}
             </p>
           </div>
         </div>
