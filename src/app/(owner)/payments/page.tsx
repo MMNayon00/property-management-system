@@ -16,7 +16,9 @@ interface RentRecord {
   flatId: string;
   flat: Flat;
   month: string; // format: "YYYY-MM"
-  total: number;
+  totalAmount: number;
+  paidAmount: number;
+  dueAmount: number;
   paymentStatus: string;
   payments: Payment[];
 }
@@ -80,10 +82,7 @@ export default function PaymentsPage() {
   const handleOpenModal = (rentRecord?: RentRecord) => {
     if (rentRecord) {
       setSelectedRent(rentRecord);
-      // Calculate remaining amount
-      const paid = rentRecord.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      const remaining = rentRecord.total - paid;
-      setFormData(prev => ({ ...prev, amount: remaining.toString() }));
+      setFormData(prev => ({ ...prev, amount: (rentRecord.dueAmount || 0).toString() }));
     } else {
       setSelectedRent(null);
       setFormData({ amount: "", method: "CASH", reference: "" });
@@ -95,9 +94,7 @@ export default function PaymentsPage() {
     const rent = unpaidRents.find(r => r.id === rentId);
     if (rent) {
       setSelectedRent(rent);
-      const paid = rent.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      const remaining = rent.total - paid;
-      setFormData(prev => ({ ...prev, amount: remaining.toString() }));
+      setFormData(prev => ({ ...prev, amount: (rent.dueAmount || 0).toString() }));
     }
   };
 
@@ -164,14 +161,12 @@ export default function PaymentsPage() {
           <h2 className="text-lg font-medium text-red-800 mb-3">বকেয়া ভাড়া (Unpaid Tracking)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {unpaidRents.map(rent => {
-              const paid = rent.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-              const remaining = rent.total - paid;
               return (
                 <div key={rent.id} className="bg-white p-3 rounded shadow-sm border border-red-100 flex justify-between items-center">
                   <div>
                     <p className="text-sm font-bold text-gray-900">{rent.flat.building.name} - {rent.flat.flatNumber}</p>
                     <p className="text-xs text-gray-500">{getMonthName(rent.month)}</p>
-                    <p className="text-sm font-medium text-red-600 mt-1">বাকি: ৳ {remaining}</p>
+                    <p className="text-sm font-medium text-red-600 mt-1">বাকি: ৳ {rent.dueAmount || 0}</p>
                   </div>
                   <button 
                     onClick={() => handleOpenModal(rent)}
@@ -251,10 +246,9 @@ export default function PaymentsPage() {
                   >
                     <option value="" disabled selected>নির্বাচন করুন</option>
                     {unpaidRents.map((r) => {
-                      const paid = r.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
                       return (
                         <option key={r.id} value={r.id}>
-                          {r.flat.building.name} - {r.flat.flatNumber} ({getMonthName(r.month)}) - বাকি: ৳{r.total - paid}
+                          {r.flat.building.name} - {r.flat.flatNumber} ({getMonthName(r.month)}) - বাকি: ৳{r.dueAmount || 0}
                         </option>
                       );
                     })}
@@ -265,7 +259,7 @@ export default function PaymentsPage() {
                 <div className="bg-gray-50 p-3 rounded text-sm text-gray-700">
                   <p><strong>ফ্ল্যাট:</strong> {selectedRent.flat.building.name} - {selectedRent.flat.flatNumber}</p>
                   <p><strong>মাস:</strong> {getMonthName(selectedRent.month)}</p>
-                  <p><strong>মোট ভাড়া:</strong> ৳ {selectedRent.total}</p>
+                  <p><strong>মোট ভাড়া:</strong> ৳ {selectedRent.totalAmount || 0}</p>
                 </div>
               )}
               

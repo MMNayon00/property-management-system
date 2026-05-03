@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
       select: { currentTenantId: true }
     });
 
+    const totalAmount = baseRent + (extraCharges || 0) + (serviceCharges || 0);
+
     const rentRecord = await prisma.rentRecord.create({
       data: {
         flatId,
@@ -83,7 +85,8 @@ export async function POST(req: NextRequest) {
         baseRent,
         extraCharges: extraCharges || 0,
         serviceCharges: serviceCharges || 0,
-        total,
+        totalAmount,
+        dueAmount: totalAmount, // Initial due is the full amount
         tenantId: flat?.currentTenantId || null,
       },
     });

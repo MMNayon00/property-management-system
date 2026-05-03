@@ -70,7 +70,7 @@ export default function TenantDashboard() {
           </div>
           <div>
             <p className="text-sm text-gray-500">{t.tenantPortal.totalPaid}</p>
-            <p className="text-xl font-bold text-gray-800">৳{summary.paidAmount}</p>
+            <p className="text-xl font-bold text-gray-800">৳{summary.paidAmount || 0}</p>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ export default function TenantDashboard() {
           </div>
           <div>
             <p className="text-sm text-red-500 font-bold">মোট বাকি (Total Due)</p>
-            <p className="text-2xl font-black text-red-600">৳{summary.dueAmount}</p>
+            <p className="text-2xl font-black text-red-600">৳{summary.dueAmount || 0}</p>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export default function TenantDashboard() {
           </div>
           <div>
             <p className="text-sm text-gray-500">{t.tenantPortal.totalMonths}</p>
-            <p className="text-xl font-bold text-gray-800">{summary.totalMonths} {t.rent.month}</p>
+            <p className="text-xl font-bold text-gray-800">{summary.totalMonths || 0} {t.rent.month}</p>
           </div>
         </div>
       </div>
@@ -110,8 +110,8 @@ export default function TenantDashboard() {
                   <p className="text-xs text-gray-500">মোট: ৳{record.amount}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-red-600 font-black">৳{record.due} বাকি</p>
-                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase">{record.status}</span>
+                  <p className="text-red-600 font-black">৳{record.due || 0} বাকি</p>
+                  <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase font-bold">{record.status}</span>
                 </div>
               </div>
             ))}
@@ -195,7 +195,7 @@ export default function TenantDashboard() {
               {rentHistory.length > 0 ? rentHistory.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-800">{record.month}</td>
-                  <td className="px-6 py-4 font-semibold">৳{record.total}</td>
+                  <td className="px-6 py-4 font-semibold">৳{record.totalAmount}</td>
                   <td className="px-6 py-4">
                     ৳{record.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0}
                   </td>
