@@ -17,12 +17,24 @@ export async function GET(req: NextRequest) {
     const fromMonth = searchParams.get('fromMonth') || undefined;
     const toMonth = searchParams.get('toMonth') || undefined;
 
-    if (!tenantId) {
+    const { id, role } = (session as any).user;
+    let targetTenantId = tenantId;
+
+    if (role === "TENANT") {
+      const tenant = await prisma.tenant.findUnique({ where: { userId: id } });
+      if (!tenant) return NextResponse.json({ error: "Tenant record not found" }, { status: 404 });
+      targetTenantId = tenant.id;
+    } else if (!targetTenantId) {
       return NextResponse.json({ error: "tenantId is required" }, { status: 400 });
     }
 
+    // Security: If not admin/owner/manager, check if it's their own record
+    if (role === "TENANT" && tenantId && tenantId !== targetTenantId) {
+        return NextResponse.json({ error: "Forbidden: You can only access your own report" }, { status: 403 });
+    }
+
     // Get report data
-    const reportData = await getTenantReportData(tenantId, fromMonth, toMonth);
+    const reportData = await getTenantReportData(targetTenantId as string, fromMonth, toMonth);
 
     if (!reportData) {
       return NextResponse.json({ error: "Tenant or data not found" }, { status: 404 });

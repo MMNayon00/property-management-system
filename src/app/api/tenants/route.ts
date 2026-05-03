@@ -7,11 +7,12 @@ import { z } from "zod";
 
 const tenantSchema = z.object({
   name: z.string().min(1),
-  phone: z.string().optional(),
-  whatsapp: z.string().optional(),
-  nidNumber: z.string().optional(),
+  phone: z.string().optional().or(z.literal("")),
+  whatsapp: z.string().optional().or(z.literal("")),
+  nidNumber: z.string().optional().or(z.literal("")),
   moveInDate: z.string(),
   flatId: z.string(),
+  email: z.string().email().optional().or(z.literal("")),
 });
 
 export async function GET(req: NextRequest) {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
-    const { name, phone, whatsapp, nidNumber, moveInDate, flatId } = validation.data;
+    const { name, phone, whatsapp, nidNumber, moveInDate, flatId, email } = validation.data;
 
     // Verify flat is available
     const targetFlat = await prisma.flat.findUnique({ where: { id: flatId } });
@@ -79,17 +80,80 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This flat is already occupied" }, { status: 400 });
     }
 
-    // Create tenant
-    const tenant = await prisma.tenant.create({
-      data: {
-        name,
-        phone: phone || null,
-        whatsapp: whatsapp || null,
-        nidNumber: nidNumber || null,
-        moveInDate: new Date(moveInDate),
-        currentFlatId: flatId,
-      },
-    });
+    // Handle User account creation/linking
+    let userId = null;
+    if (email || phone) {
+      // Check if user already exists
+      let existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            ...(email ? [{ email }] : []),
+            ...(phone ? [{ phone }] : []),
+          ],
+        },
+      });
+
+      if (existingUser) {
+        userId = existingUser.id;
+        // Update role if not already tenant
+        if (existingUser.role !== "TENANT" && existingUser.role !== "OWNER" && existingUser.role !== "ADMIN") {
+           await prisma.user.update({
+             where: { id: existingUser.id },
+             data: { role: "TENANT" }
+           });
+        }
+      } else {
+        // Create new user
+        const bcrypt = await import("bcryptjs");
+        const hashedPassword = await bcrypt.hash("tenant123", 10);
+        
+        const user = await prisma.user.create({
+          data: {
+            email: email || `${phone || Date.now()}@tenant.com`,
+            firstName: name,
+            phone: phone || null,
+            password: hashedPassword,
+            role: "TENANT",
+            status: "APPROVED",
+          }
+        });
+        userId = user.id;
+      }
+    }
+
+    // Create or Update tenant
+    let tenant;
+    const existingTenant = userId ? await prisma.tenant.findUnique({ where: { userId } }) : null;
+
+    if (existingTenant) {
+      // Update existing tenant's flat
+      tenant = await prisma.tenant.update({
+        where: { id: existingTenant.id },
+        data: {
+          name,
+          phone: phone || existingTenant.phone,
+          whatsapp: whatsapp || existingTenant.whatsapp,
+          nidNumber: nidNumber || existingTenant.nidNumber,
+          moveInDate: new Date(moveInDate),
+          currentFlatId: flatId,
+          email: email || existingTenant.email,
+        }
+      });
+    } else {
+      // Create new tenant
+      tenant = await prisma.tenant.create({
+        data: {
+          name,
+          phone: phone || null,
+          whatsapp: whatsapp || null,
+          nidNumber: nidNumber || null,
+          moveInDate: new Date(moveInDate),
+          currentFlatId: flatId,
+          email: email || null,
+          userId: userId,
+        },
+      });
+    }
 
     // Create tenant history entry
     await prisma.tenantHistory.create({
@@ -105,6 +169,17 @@ export async function POST(req: NextRequest) {
     await prisma.flat.update({
       where: { id: flatId },
       data: { status: "OCCUPIED", currentTenantId: tenant.id },
+    });
+
+    // Link any existing unlinked rent records for this flat to the new tenant
+    await prisma.rentRecord.updateMany({
+      where: {
+        flatId,
+        tenantId: null,
+      },
+      data: {
+        tenantId: tenant.id,
+      },
     });
 
     return NextResponse.json(tenant, { status: 201 });

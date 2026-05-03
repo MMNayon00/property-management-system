@@ -127,9 +127,9 @@ export default function ProfilePage() {
             name="firstName"
             value={form.firstName}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT' ? 'bg-gray-50' : ''}`}
             required
-            disabled={(session?.user as any)?.role === 'ADMIN'}
+            disabled={(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT'}
           />
         </div>
 
@@ -141,8 +141,8 @@ export default function ProfilePage() {
             name="lastName"
             value={form.lastName}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
-            disabled={(session?.user as any)?.role === 'ADMIN'}
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT' ? 'bg-gray-50' : ''}`}
+            disabled={(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT'}
           />
         </div>
 
@@ -166,12 +166,12 @@ export default function ProfilePage() {
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' ? 'bg-gray-50' : ''}`}
-            disabled={(session?.user as any)?.role === 'ADMIN'}
+            className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 ${(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT' ? 'bg-gray-50' : ''}`}
+            disabled={(session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'TENANT'}
           />
         </div>
 
-        {(session?.user as any)?.role !== 'ADMIN' && (
+        {(session?.user as any)?.role !== 'ADMIN' && (session?.user as any)?.role !== 'TENANT' && (
           <button
             type="submit"
             disabled={saving}

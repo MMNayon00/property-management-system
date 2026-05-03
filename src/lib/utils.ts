@@ -139,3 +139,10 @@ export function numberToBangla(num: number): string {
   const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
   return String(num).split("").map((d) => banglaDigits[parseInt(d)]).join("");
 }
+
+/**
+ * Generate a 6-digit OTP
+ */
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}

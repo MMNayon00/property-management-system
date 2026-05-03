@@ -54,6 +54,53 @@ export const authConfig = {
       },
     }),
 
+    // Phone + OTP login
+    CredentialsProvider({
+      id: "phone-otp",
+      name: "Phone OTP",
+      credentials: {
+        phone: { label: "Phone", type: "text" },
+        otp: { label: "OTP", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.phone || !credentials?.otp) {
+          return null;
+        }
+ 
+        const user = await prisma.user.findUnique({
+          where: { phone: credentials.phone as string },
+        });
+ 
+        if (!user || !user.otp || !user.otpExpires) {
+          return null;
+        }
+ 
+        // Verify OTP
+        if (user.otp !== credentials.otp) {
+          throw new Error("Invalid OTP");
+        }
+ 
+        // Check expiry
+        if (new Date() > user.otpExpires) {
+          throw new Error("OTP expired");
+        }
+ 
+        // Clear OTP after use
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { otp: null, otpExpires: null }
+        });
+ 
+        return {
+          id: user.id,
+          email: user.email,
+          name: `${user.firstName} ${user.lastName || ""}`,
+          role: user.role,
+          status: user.status,
+        };
+      },
+    }),
+
     // Google OAuth (structure ready)
     ...(process.env.GOOGLE_CLIENT_ID &&
     process.env.GOOGLE_CLIENT_SECRET ? [

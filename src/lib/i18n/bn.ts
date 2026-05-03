@@ -335,6 +335,27 @@ const translations = {
     tryAgain: "আবার চেষ্টা করুন",
     operationSuccessful: "অপারেশন সফল",
   },
+
+  // ==================== Tenant Portal ====================
+  tenantPortal: {
+    title: "ভাড়াটিয়া পোর্টাল",
+    myRent: "আমার ভাড়া",
+    currentStatus: "বর্তমান অবস্থা",
+    paid: "পরিশোধিত",
+    due: "বাকি",
+    rentHistory: "ভাড়া ইতিহাস",
+    paymentSummary: "পেমেন্ট সারসংক্ষেপ",
+    totalPaid: "মোট পরিশোধিত",
+    totalDue: "মোট বাকি",
+    totalMonths: "মোট মাস",
+    downloadReport: "রিপোর্ট ডাউনলোড করুন",
+    statusPaid: "পরিশোধিত",
+    statusUnpaid: "বাকি",
+    currentMonth: "বর্তমান মাস",
+    totalRent: "মোট ভাড়া",
+    paidAmount: "পরিশোধিত পরিমাণ",
+    dueAmount: "বাকি পরিমাণ",
+  },
 } as const;
 
 export default translations;

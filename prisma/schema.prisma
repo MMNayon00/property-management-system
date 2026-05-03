@@ -23,11 +23,14 @@ model User {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
   lastLoginAt      DateTime?
+  otp              String?
+  otpExpires       DateTime?
   ownerId          String?
   owner            User?      @relation("OwnerManager", fields: [ownerId], references: [id], onDelete: SetNull)
   managers         User[]     @relation("OwnerManager")
   buildings        Building[]
   payments         Payment[]  @relation("CreatedBy")
+  tenant           Tenant?    @relation("UserTenant")
 
   @@index([email])
   @@index([status])
@@ -79,6 +82,7 @@ model Flat {
 model Tenant {
   id            String          @id @default(cuid())
   name          String
+  email         String?
   phone         String?
   whatsapp      String?
   nidNumber     String?
@@ -92,9 +96,12 @@ model Tenant {
   currentFlat   Flat?           @relation("CurrentTenant")
   history       TenantHistory[]
   rentRecords   RentRecord[]
+  userId        String?         @unique
+  user          User?           @relation("UserTenant", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([nidNumber])
   @@index([currentFlatId])
+  @@index([email])
 }
 
 model TenantHistory {
@@ -178,6 +185,7 @@ enum UserRole {
   ADMIN
   OWNER
   MANAGER
+  TENANT
 }
 
 enum UserStatus {

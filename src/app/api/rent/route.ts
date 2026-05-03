@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rent record already exists" }, { status: 409 });
     }
 
+    // Find the current tenant for this flat
+    const flat = await prisma.flat.findUnique({
+      where: { id: flatId },
+      select: { currentTenantId: true }
+    });
+
     const rentRecord = await prisma.rentRecord.create({
       data: {
         flatId,
@@ -78,6 +84,7 @@ export async function POST(req: NextRequest) {
         extraCharges: extraCharges || 0,
         serviceCharges: serviceCharges || 0,
         total,
+        tenantId: flat?.currentTenantId || null,
       },
     });
 
