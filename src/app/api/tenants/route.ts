@@ -13,6 +13,8 @@ const tenantSchema = z.object({
   moveInDate: z.string(),
   flatId: z.string(),
   email: z.string().email().optional().or(z.literal("")),
+  advanceAmount: z.number().optional().default(0),
+  advanceNote: z.string().optional().or(z.literal("")),
 });
 
 export async function GET(req: NextRequest) {
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
-    const { name, phone, whatsapp, nidNumber, moveInDate, flatId, email } = validation.data;
+    const { name, phone, whatsapp, nidNumber, moveInDate, flatId, email, advanceAmount, advanceDate, advanceReceived } = validation.data;
 
     // Verify flat is available
     const targetFlat = await prisma.flat.findUnique({ where: { id: flatId } });
@@ -82,13 +84,16 @@ export async function POST(req: NextRequest) {
 
     // Handle User account creation/linking
     let userId = null;
-    if (email || phone) {
+    const cleanEmail = email?.trim() || null;
+    const cleanPhone = phone?.trim() || null;
+
+    if (cleanEmail || cleanPhone) {
       // Check if user already exists
       let existingUser = await prisma.user.findFirst({
         where: {
           OR: [
-            ...(email ? [{ email }] : []),
-            ...(phone ? [{ phone }] : []),
+            ...(cleanEmail ? [{ email: cleanEmail }] : []),
+            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
           ],
         },
       });
@@ -109,9 +114,9 @@ export async function POST(req: NextRequest) {
         
         const user = await prisma.user.create({
           data: {
-            email: email || `${phone || Date.now()}@tenant.com`,
+            email: cleanEmail || `${cleanPhone || Date.now()}@tenant.com`,
             firstName: name,
-            phone: phone || null,
+            phone: cleanPhone || null,
             password: hashedPassword,
             role: "TENANT",
             status: "APPROVED",
@@ -131,12 +136,15 @@ export async function POST(req: NextRequest) {
         where: { id: existingTenant.id },
         data: {
           name,
-          phone: phone || existingTenant.phone,
+          phone: cleanPhone || existingTenant.phone,
           whatsapp: whatsapp || existingTenant.whatsapp,
           nidNumber: nidNumber || existingTenant.nidNumber,
           moveInDate: new Date(moveInDate),
           currentFlatId: flatId,
-          email: email || existingTenant.email,
+          email: cleanEmail || existingTenant.email,
+          advanceAmount: advanceAmount !== undefined ? advanceAmount : existingTenant.advanceAmount,
+          advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : existingTenant.advanceDate,
+          advanceReceived: advanceReceived !== undefined ? advanceReceived : existingTenant.advanceReceived,
         }
       });
     } else {
@@ -144,13 +152,16 @@ export async function POST(req: NextRequest) {
       tenant = await prisma.tenant.create({
         data: {
           name,
-          phone: phone || null,
+          phone: cleanPhone || null,
           whatsapp: whatsapp || null,
           nidNumber: nidNumber || null,
           moveInDate: new Date(moveInDate),
           currentFlatId: flatId,
-          email: email || null,
+          email: cleanEmail || null,
           userId: userId,
+          advanceAmount: advanceAmount || 0,
+          advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : null,
+          advanceReceived: advanceReceived || false,
         },
       });
     }

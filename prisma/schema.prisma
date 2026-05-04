@@ -97,6 +97,9 @@ model Tenant {
   history       TenantHistory[]
   rentRecords   RentRecord[]
   userId        String?         @unique
+  advanceAmount Int             @default(0)
+  advanceDate   DateTime?
+  advanceReceived Boolean       @default(false)
   user          User?           @relation("UserTenant", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([nidNumber])

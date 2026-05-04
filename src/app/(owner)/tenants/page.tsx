@@ -81,7 +81,7 @@ export default function TenantsPage() {
     }
   };
 
-  const handleOpenModal = (tenant?: Tenant) => {
+  const handleOpenModal = (tenant?: Tenant | any) => {
     if (tenant) {
       setIsEditing(true);
       setFormData({
@@ -93,10 +93,19 @@ export default function TenantsPage() {
         flatId: tenant.currentFlat?.id || "",
         buildingId: "",
         moveInDate: "",
+        advanceAmount: tenant.advanceAmount || 0,
+        advanceDate: tenant.advanceDate ? new Date(tenant.advanceDate).toISOString().split('T')[0] : "",
+        advanceReceived: tenant.advanceReceived || false,
       });
     } else {
       setIsEditing(false);
-      setFormData({ id: "", name: "", phone: "", whatsapp: "", nidNumber: "", buildingId: "", flatId: "", moveInDate: new Date().toISOString().split('T')[0] });
+      setFormData({ 
+        id: "", name: "", phone: "", whatsapp: "", nidNumber: "", buildingId: "", flatId: "", 
+        moveInDate: new Date().toISOString().split('T')[0],
+        advanceAmount: 0,
+        advanceDate: "",
+        advanceReceived: false 
+      });
     }
     setShowModal(true);
   };
@@ -107,16 +116,21 @@ export default function TenantsPage() {
 
     try {
       let res;
+      const commonData = {
+        name: formData.name,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        nidNumber: formData.nidNumber,
+        advanceAmount: Number(formData.advanceAmount),
+        advanceNote: formData.advanceNote,
+        advanceReceived: formData.advanceReceived,
+      };
+
       if (isEditing) {
         res = await fetch(`/api/tenants/${formData.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name,
-            phone: formData.phone,
-            whatsapp: formData.whatsapp,
-            nidNumber: formData.nidNumber,
-          }),
+          body: JSON.stringify(commonData),
         });
       } else {
         // Manual validation for building and flat
@@ -135,10 +149,7 @@ export default function TenantsPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: formData.name,
-            phone: formData.phone,
-            whatsapp: formData.whatsapp,
-            nidNumber: formData.nidNumber,
+            ...commonData,
             flatId: formData.flatId,
             moveInDate: formData.moveInDate,
           }),
@@ -280,7 +291,7 @@ export default function TenantsPage() {
                 <input
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.name || ""}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
@@ -290,7 +301,7 @@ export default function TenantsPage() {
                   <label className="block text-sm font-medium text-gray-700">{t.tenants.phone}</label>
                   <input
                     type="text"
-                    value={formData.phone}
+                    value={formData.phone || ""}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
@@ -299,20 +310,54 @@ export default function TenantsPage() {
                   <label className="block text-sm font-medium text-gray-700">{t.tenants.whatsapp}</label>
                   <input
                     type="text"
-                    value={formData.whatsapp}
+                    value={formData.whatsapp || ""}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{t.tenants.nidNumber}</label>
-                <input
-                  type="text"
-                  value={formData.nidNumber}
-                  onChange={(e) => setFormData({ ...formData, nidNumber: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-medium text-gray-700">NID নম্বর</label>
+                  <input
+                    type="text"
+                    value={formData.nidNumber || ""}
+                    onChange={(e) => setFormData({ ...formData, nidNumber: e.target.value })}
+                    className="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-xs"
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-medium text-gray-700">অ্যাডভান্সড (৳)</label>
+                  <input
+                    type="number"
+                    value={formData.advanceAmount || 0}
+                    onChange={(e) => setFormData({ ...formData, advanceAmount: Number(e.target.value) })}
+                    className="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-xs"
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-medium text-gray-700">অ্যাডভান্সড তারিখ</label>
+                  <input
+                    type="date"
+                    value={formData.advanceDate || ""}
+                    onChange={(e) => setFormData({ ...formData, advanceDate: e.target.value })}
+                    className="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-xs"
+                  />
+                </div>
+                <div className="sm:col-span-1 pb-1">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, advanceReceived: !formData.advanceReceived })}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.advanceReceived ? 'bg-green-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.advanceReceived ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                    <span className="text-xs font-bold text-gray-600">
+                      {formData.advanceReceived ? "গৃহীত (Received)" : "বাকি (Pending)"}
+                    </span>
+                  </div>
+                </div>
               </div>
               {!isEditing && (
                 <>
@@ -389,7 +434,7 @@ export default function TenantsPage() {
                     <input
                       type="date"
                       required
-                      value={formData.moveInDate}
+                      value={formData.moveInDate || ""}
                       onChange={(e) => setFormData({ ...formData, moveInDate: e.target.value })}
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />

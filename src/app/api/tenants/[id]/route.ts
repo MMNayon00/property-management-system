@@ -10,6 +10,8 @@ const updateSchema = z.object({
   whatsapp: z.string().optional(),
   nidNumber: z.string().optional(),
   moveOutDate: z.string().optional(),
+  advanceAmount: z.number().optional(),
+  advanceNote: z.string().optional().or(z.literal("")),
 });
 
 export async function PATCH(
@@ -31,7 +33,7 @@ export async function PATCH(
       return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
-    const { name, phone, whatsapp, nidNumber, moveOutDate } = validation.data;
+    const { name, phone, whatsapp, nidNumber, moveOutDate, advanceAmount, advanceDate, advanceReceived } = validation.data;
 
     let updatedTenant;
 
@@ -62,6 +64,9 @@ export async function PATCH(
           where: { id: tenantId },
           data: {
             name, phone, whatsapp, nidNumber,
+            advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
+            advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
+            advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
             moveOutDate: new Date(moveOutDate),
             currentFlatId: null,
           },
@@ -70,14 +75,25 @@ export async function PATCH(
         // Already moved out, just update info
         updatedTenant = await prisma.tenant.update({
           where: { id: tenantId },
-          data: { name, phone, whatsapp, nidNumber, moveOutDate: new Date(moveOutDate) },
+          data: { 
+            name, phone, whatsapp, nidNumber, 
+            advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
+            advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
+            advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
+            moveOutDate: new Date(moveOutDate) 
+          },
         });
       }
     } else {
       // Just updating info
       updatedTenant = await prisma.tenant.update({
         where: { id: tenantId },
-        data: { name, phone, whatsapp, nidNumber },
+        data: { 
+          name, phone, whatsapp, nidNumber,
+          advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
+          advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
+          advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
+        },
       });
     }
 
