@@ -62,6 +62,8 @@ model Flat {
   flatNumber      String
   floor           Int?
   baseRent        Int
+  extraCharges    Int             @default(0)
+  serviceCharges  Int             @default(0)
   status          FlatStatus      @default(VACANT)
   buildingId      String
   currentTenantId String?         @unique

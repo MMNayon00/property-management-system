@@ -45,9 +45,8 @@ export async function generateMonthlyRentRecords() {
         if (!existing) {
           console.log(`Generating rent for tenant ${tenant.name} - ${month}`);
           const baseRent = tenant.currentFlat.baseRent;
-          // You could add logic here to fetch recurring charges
-          const extraCharges = 0; 
-          const serviceCharges = 0;
+          const extraCharges = tenant.currentFlat.extraCharges || 0; 
+          const serviceCharges = tenant.currentFlat.serviceCharges || 0;
           const totalAmount = baseRent + extraCharges + serviceCharges;
 
           await prisma.rentRecord.create({
