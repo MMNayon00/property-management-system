@@ -109,12 +109,21 @@ export async function updateRentRecordBalances(rentRecordId: string) {
  */
 function getMonthsBetween(start: Date, end: Date): string[] {
   const months = [];
-  const curr = new Date(start.getFullYear(), start.getMonth(), 1);
-  const last = new Date(end.getFullYear(), end.getMonth(), 1);
+  let currY = start.getFullYear();
+  let currM = start.getMonth(); // 0-indexed
+  
+  const endY = end.getFullYear();
+  const endM = end.getMonth();
 
-  while (curr <= last) {
-    months.push(curr.toISOString().slice(0, 7));
-    curr.setMonth(curr.getMonth() + 1);
+  while (currY < endY || (currY === endY && currM <= endM)) {
+    const monthStr = `${currY}-${String(currM + 1).padStart(2, '0')}`;
+    months.push(monthStr);
+    
+    currM++;
+    if (currM > 11) {
+      currM = 0;
+      currY++;
+    }
   }
   return months;
 }
