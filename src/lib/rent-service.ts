@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+// TODO: Replace all Prisma usage with direct PostgreSQL queries using the 'pg' library.
 
 /**
  * Automatically generates rent records for a specific month.

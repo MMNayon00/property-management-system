@@ -1,6 +1,6 @@
 // Sign up API route
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 import { hashPassword, isValidEmail, isValidPhoneNumber } from "@/lib/utils";
 import { z } from "zod";
 
@@ -46,11 +46,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { phone }],
-      },
-    });
+    const existingUser = await query(
+      "SELECT * FROM \"User\" WHERE email = $1 OR phone = $2",
+      [email, phone]
+    ).then(res => res.rows[0]);
 
     if (existingUser) {
       return NextResponse.json(
@@ -63,17 +62,12 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hashPassword(password);
 
     // Create user with APPROVED status
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName: lastName || null,
-        email,
-        phone,
-        password: hashedPassword,
-        role: "OWNER", // Default role for signup
-        status: "APPROVED", // Auto-approved
-      },
-    });
+    const user = await query(
+      `INSERT INTO "User" (id, "firstName", "lastName", email, phone, password, role, status, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+       RETURNING *`,
+      [firstName, lastName || null, email, phone, hashedPassword, "OWNER", "APPROVED"]
+    ).then(res => res.rows[0]);
 
     return NextResponse.json(
       {

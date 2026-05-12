@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth.config";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -23,7 +23,8 @@ export async function PATCH(
     if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const tenantId = (await params).id;
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenantResult = await query('SELECT * FROM "Tenant" WHERE id = $1', [tenantId]);
+    const tenant = tenantResult.rows[0];
 
     if (!tenant) return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
 
@@ -41,60 +42,43 @@ export async function PATCH(
       // Moving out process
       if (tenant.currentFlatId) {
         // Find latest history record to set moveOutDate
-        const latestHistory = await prisma.tenantHistory.findFirst({
-          where: { tenantId, flatId: tenant.currentFlatId, moveOutDate: null },
-          orderBy: { moveInDate: 'desc' }
-        });
+        const historyResult = await query('SELECT * FROM "TenantHistory" WHERE "tenantId" = $1 AND "flatId" = $2 AND "moveOutDate" IS NULL ORDER BY "moveInDate" DESC LIMIT 1', [tenantId, tenant.currentFlatId]);
+        const latestHistory = historyResult.rows[0];
 
         if (latestHistory) {
-          await prisma.tenantHistory.update({
-            where: { id: latestHistory.id },
-            data: { moveOutDate: new Date(moveOutDate) },
-          });
+          await query('UPDATE "TenantHistory" SET "moveOutDate" = $1 WHERE id = $2', [new Date(moveOutDate), latestHistory.id]);
         }
 
         // Make flat vacant
-        await prisma.flat.update({
-          where: { id: tenant.currentFlatId },
-          data: { status: "VACANT", currentTenantId: null },
-        });
+        await query('UPDATE "Flat" SET status = $1, "currentTenantId" = $2, "updatedAt" = NOW() WHERE id = $3', ["VACANT", null, tenant.currentFlatId]);
 
         // Update tenant
-        updatedTenant = await prisma.tenant.update({
-          where: { id: tenantId },
-          data: {
-            name, phone, whatsapp, nidNumber,
-            advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
-            advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
-            advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
-            moveOutDate: new Date(moveOutDate),
-            currentFlatId: null,
-          },
-        });
+        const updateResult = await query(`
+          UPDATE "Tenant"
+          SET name = $1, phone = $2, whatsapp = $3, "nidNumber" = $4, "advanceAmount" = $5, "advanceDate" = $6, "advanceReceived" = $7, "moveOutDate" = $8, "currentFlatId" = $9, "updatedAt" = NOW()
+          WHERE id = $10
+          RETURNING *
+        `, [name, phone, whatsapp, nidNumber, advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount, (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate, advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived, new Date(moveOutDate), null, tenantId]);
+        updatedTenant = updateResult.rows[0];
       } else {
         // Already moved out, just update info
-        updatedTenant = await prisma.tenant.update({
-          where: { id: tenantId },
-          data: { 
-            name, phone, whatsapp, nidNumber, 
-            advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
-            advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
-            advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
-            moveOutDate: new Date(moveOutDate) 
-          },
-        });
+        const updateResult = await query(`
+          UPDATE "Tenant"
+          SET name = $1, phone = $2, whatsapp = $3, "nidNumber" = $4, "advanceAmount" = $5, "advanceDate" = $6, "advanceReceived" = $7, "moveOutDate" = $8, "updatedAt" = NOW()
+          WHERE id = $9
+          RETURNING *
+        `, [name, phone, whatsapp, nidNumber, advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount, (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate, advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived, new Date(moveOutDate), tenantId]);
+        updatedTenant = updateResult.rows[0];
       }
     } else {
       // Just updating info
-      updatedTenant = await prisma.tenant.update({
-        where: { id: tenantId },
-        data: { 
-          name, phone, whatsapp, nidNumber,
-          advanceAmount: advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount,
-          advanceDate: (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate,
-          advanceReceived: advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived,
-        },
-      });
+      const updateResult = await query(`
+        UPDATE "Tenant"
+        SET name = $1, phone = $2, whatsapp = $3, "nidNumber" = $4, "advanceAmount" = $5, "advanceDate" = $6, "advanceReceived" = $7, "updatedAt" = NOW()
+        WHERE id = $8
+        RETURNING *
+      `, [name, phone, whatsapp, nidNumber, advanceAmount !== undefined ? advanceAmount : tenant.advanceAmount, (advanceDate && advanceDate.trim() !== "") ? new Date(advanceDate) : tenant.advanceDate, advanceReceived !== undefined ? advanceReceived : tenant.advanceReceived, tenantId]);
+      updatedTenant = updateResult.rows[0];
     }
 
     return NextResponse.json(updatedTenant);
@@ -113,19 +97,17 @@ export async function DELETE(
     if (!(session as any)?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const tenantId = (await params).id;
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenantResult = await query('SELECT * FROM "Tenant" WHERE id = $1', [tenantId]);
+    const tenant = tenantResult.rows[0];
 
     if (!tenant) return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
 
     // If tenant is still occupying a flat, make it vacant
     if (tenant.currentFlatId) {
-      await prisma.flat.update({
-        where: { id: tenant.currentFlatId },
-        data: { status: "VACANT", currentTenantId: null },
-      });
+      await query('UPDATE "Flat" SET status = $1, "currentTenantId" = $2, "updatedAt" = NOW() WHERE id = $3', ["VACANT", null, tenant.currentFlatId]);
     }
 
-    await prisma.tenant.delete({ where: { id: tenantId } });
+    await query('DELETE FROM "Tenant" WHERE id = $1', [tenantId]);
 
     return NextResponse.json({ message: "Tenant deleted successfully" });
   } catch (error) {

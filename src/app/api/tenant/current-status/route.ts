@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth.config";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,9 +15,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const tenant = await prisma.tenant.findUnique({
-      where: { userId: id },
-    });
+    const tenantResult = await query(
+      'SELECT * FROM "Tenant" WHERE "userId" = $1',
+      [id]
+    );
+    const tenant = tenantResult.rows[0];
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
@@ -25,20 +27,29 @@ export async function GET(req: NextRequest) {
 
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
-    // Fetch all rent records for this tenant
-    const allRecords = await prisma.rentRecord.findMany({
-      where: { tenantId: tenant.id },
-      include: { payments: true },
-      orderBy: { month: "asc" },
-    });
+    // Fetch all rent records for this tenant with payments
+    const allRecordsResult = await query(`
+      SELECT rr.*, 
+             json_agg(p.*) as payments
+      FROM "RentRecord" rr
+      LEFT JOIN "Payment" p ON rr.id = p."rentRecordId"
+      WHERE rr."tenantId" = $1
+      GROUP BY rr.id
+      ORDER BY rr.month
+    `, [tenant.id]);
+
+    const allRecords = allRecordsResult.rows.map(row => ({
+      ...row,
+      payments: row.payments || []
+    }));
 
     // Separate current month and unpaid months
     const currentRecord = allRecords.find(r => r.month === currentMonth);
     const unpaidMonths = allRecords.filter(r => r.paymentStatus !== "PAID");
     
     // Calculate total summary
-    const totalRent = allRecords.reduce((sum, r) => sum + r.totalAmount, 0);
-    const paidAmount = allRecords.reduce((sum, r) => sum + r.paidAmount, 0);
+    const totalRent = allRecords.reduce((sum, r) => sum + parseFloat(r.totalAmount), 0);
+    const paidAmount = allRecords.reduce((sum, r) => sum + parseFloat(r.paidAmount), 0);
     const dueAmount = totalRent - paidAmount;
 
     return NextResponse.json({

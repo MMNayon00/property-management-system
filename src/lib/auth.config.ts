@@ -1,14 +1,12 @@
 // Authentication configuration with NextAuth
 // Supports email/password, phone/OTP, and Google OAuth
 
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "./prisma";
 import { verifyPassword } from "./utils";
+import { query } from "./db";
 
 export const authConfig = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     // Email + Password login
     CredentialsProvider({
@@ -22,9 +20,10 @@ export const authConfig = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        const user = await query(
+          "SELECT * FROM \"User\" WHERE email = $1",
+          [credentials.email as string]
+        ).then(res => res.rows[0]);
 
         if (!user || !user.password) {
           return null;
@@ -67,9 +66,10 @@ export const authConfig = {
           return null;
         }
  
-        const user = await prisma.user.findUnique({
-          where: { phone: credentials.phone as string },
-        });
+        const user = await query(
+          "SELECT * FROM \"User\" WHERE phone = $1",
+          [credentials.phone as string]
+        ).then(res => res.rows[0]);
  
         if (!user || !user.otp || !user.otpExpires) {
           return null;
@@ -86,10 +86,10 @@ export const authConfig = {
         }
  
         // Clear OTP after use
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { otp: null, otpExpires: null }
-        });
+        await query(
+          "UPDATE \"User\" SET otp = NULL, \"otpExpires\" = NULL WHERE id = $1",
+          [user.id]
+        );
  
         return {
           id: user.id,

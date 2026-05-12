@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 import { generateOTP } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
@@ -11,9 +11,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Find user by phone
-    const user = await prisma.user.findUnique({
-      where: { phone },
-    });
+    const user = await query(
+      "SELECT * FROM \"User\" WHERE phone = $1",
+      [phone]
+    ).then(res => res.rows[0]);
 
     if (!user) {
       return NextResponse.json({ error: "User not found with this phone number" }, { status: 404 });
@@ -24,13 +25,10 @@ export async function POST(req: NextRequest) {
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     // Save OTP to user
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        otp,
-        otpExpires: expires,
-      },
-    });
+    await query(
+      "UPDATE \"User\" SET otp = $1, \"otpExpires\" = $2 WHERE id = $3",
+      [otp, expires, user.id]
+    );
 
     // In a real app, send OTP via SMS gateway here
     console.log(`[OTP] Sent ${otp} to ${phone}`);

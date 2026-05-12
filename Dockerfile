@@ -12,8 +12,6 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
 
 # Build Next.js app
 RUN npm run build
@@ -27,11 +25,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --only=production
 
-# Copy Prisma schema
-COPY prisma ./prisma/
 
-# Copy generated Prisma client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy built app
 COPY --from=builder /app/.next ./.next
